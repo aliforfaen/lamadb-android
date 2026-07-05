@@ -1,6 +1,6 @@
 # LamaDB Android — Development Environment Setup
 
-> No Android Studio. Command-line only. Build on `norheim`, deploy to your phone via ADB over WiFi through Tailscale.
+> No Android Studio. Command-line only. Build on `cachy`, deploy to your phone via ADB over WiFi through Tailscale.
 
 ---
 
@@ -22,7 +22,7 @@ You write Kotlin source, Gradle packages it into an APK, and `adb` pushes that A
 
 ---
 
-## What `norheim` needs installed
+## What `cachy` needs installed
 
 These are the only tools required to build and test the Android client from the command line:
 
@@ -31,11 +31,11 @@ These are the only tools required to build and test the Android client from the 
 3. **Android SDK platform / build tools** — the compiler, `aapt`, `adb`, etc.
 4. **Gradle wrapper** — usually committed in the repo; downloads Gradle automatically.
 5. **ADB** — Android Debug Bridge, comes with platform-tools.
-6. **Tailscale** — already on `norheim` and your phone; used to reach your phone over WiFi.
+6. **Tailscale** — already on `cachy` and your phone; used to reach your phone over WiFi.
 
 ---
 
-## Step-by-step setup on `norheim`
+## Step-by-step setup on `cachy`
 
 ### 1. Install a JDK
 
@@ -131,7 +131,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 adb shell am start -n "com.lamadb.android/.MainActivity"
 ```
 
-If `norheim` has no display, every command above still works. The build is entirely headless.
+If `cachy` has no display, every command above still works. The build is entirely headless.
 
 ---
 
@@ -154,7 +154,7 @@ On the phone:
 - **Settings → System → Developer options → Wireless debugging** → Enable.
 - Note the port and pairing code (Android 11+ requires pairing).
 
-### 3. Pair and connect from `norheim`
+### 3. Pair and connect from `cachy`
 
 ```bash
 # Pair first (Android 11+)
@@ -176,14 +176,14 @@ adb connect 100.99.88.77:38679
 adb devices
 ```
 
-### 4. Install and run from `norheim`
+### 4. Install and run from `cachy`
 
 ```bash
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb shell am start -n "com.lamadb.android/.MainActivity"
 ```
 
-### 5. Watch logs from `norheim`
+### 5. Watch logs from `cachy`
 
 ```bash
 adb logcat -s LamaDB:D
@@ -214,17 +214,17 @@ You can leave this open in a `tmux` or `screen` session.
 ### What only you can do
 
 - Pair the phone for ADB over WiFi (unless you leave it paired).
-- Trigger install/logcat from `norheim`.
+- Trigger install/logcat from `cachy`.
 - Physically verify sensor behavior (WiFi disconnect, notification, etc.).
 
 ---
 
 ## Optional: leave a device permanently reachable
 
-If you have an old Android phone, you can leave it plugged into `norheim` via USB and set ADB to TCP mode:
+If you have an old Android phone, you can leave it plugged into `cachy` via USB and set ADB to TCP mode:
 
 ```bash
-# While phone is USB-connected to norheim
+# While phone is USB-connected to cachy
 adb tcpip 5555
 adb connect localhost:5555
 ```
@@ -235,9 +235,9 @@ This is the most reliable way to let agents run instrumented tests without your 
 
 ---
 
-## Optional: emulator on `norheim` (if KVM is available)
+## Optional: emulator on `cachy` (if KVM is available)
 
-If `norheim` supports KVM, you can run an emulator for fully automated testing:
+If `cachy` supports KVM, you can run an emulator for fully automated testing:
 
 ```bash
 # Check KVM
@@ -261,7 +261,7 @@ If `/dev/kvm` does not exist, agents are limited to compile + unit tests. Your p
 
 ## Environment variables summary
 
-Add to `~/.bashrc` or `~/.zshrc` on `norheim`:
+Add to `~/.bashrc` or `~/.zshrc` on `cachy`:
 
 ```bash
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
@@ -283,7 +283,7 @@ export PATH="$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME
 
 ### `adb devices` shows no device
 
-- Phone and `norheim` must both be on Tailscale and reachable (`ping PHONE_IP`).
+- Phone and `cachy` must both be on Tailscale and reachable (`ping PHONE_IP`).
 - Wireless debugging must be enabled.
 - Pairing code must be entered correctly.
 - Some Samsung phones require disabling "Disable USB debugging" or similar security settings.
@@ -310,7 +310,7 @@ org.gradle.parallel=true
 
 ## Next steps
 
-1. Run the setup script on `norheim` (or follow the steps above).
+1. Run the setup script on `cachy` (or follow the steps above).
 2. Verify `./gradlew build` works on a sample project.
 3. Pair your phone via ADB over WiFi through Tailscale.
 4. Hand the environment off to the Android agent to begin implementing the spec.
