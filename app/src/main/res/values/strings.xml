@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LamaDB</string>
+    <string name="placeholder_title">LamaDB Android</string>
+    <string name="placeholder_body">Skeleton is up and running.</string>
+</resources>
