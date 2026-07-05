@@ -169,7 +169,7 @@ Coordinate with the backend agent or Ali if you implement these.
 ## Handoff Notes
 
 - **2026-07-05:** Android toolchain installed on `cachy`. JDK 17, SDK, emulator, and AVD `lamadb-test` verified. Environment variables in `~/.zshrc`. LAMA-57 is `in_progress`.
-- **Next issue:** LAMA-58 — create minimal Android project skeleton.
-- **Blocker:** `./gradlew build` cannot be run until the skeleton exists.
+- `./gradlew build` verified working on `cachy`.
+- **Next issue:** LAMA-59 — implement WebView dashboard with pull-to-refresh.
 - **Open question:** best way for Ali to see the emulator on the desktop (UI window vs remote framebuffer).
 

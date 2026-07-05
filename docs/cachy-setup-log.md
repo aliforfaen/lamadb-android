@@ -136,3 +136,10 @@ This will open a Qt window on `cachy` so you can see the virtual device as agent
 - [ ] Run `./gradlew build` on that skeleton to prove the toolchain end-to-end.
 - [ ] Pair/test wireless ADB to your phone over Tailscale.
 
+
+
+## 2026-07-05
+
+- Created minimal Android project skeleton.
+- `./gradlew build`, `./gradlew test`, `./gradlew assembleDebug`, `./gradlew installDebug` verified on `cachy`.
+- Next: LAMA-59 WebView dashboard.

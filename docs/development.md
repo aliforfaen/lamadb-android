@@ -104,6 +104,8 @@ sdkmanager --list_installed
 
 Once the repo has a Gradle project, the agent/CI will run:
 
+> **Note:** The minimal Android skeleton now exists in this repo. The commands below have been verified on `cachy`.
+
 ```bash
 cd ~/LamaFiles/projects/lamadb-android
 

@@ -48,7 +48,7 @@ The Android Developer and Android Tester agents will run on the local desktop `c
 ## Issue 2: Create minimal Android project skeleton
 
 **Identifier:** `LAMA-58` (or next available)  
-**Status:** Backlog  
+**Status:** Done  
 **Priority:** P0  
 **Assignee:** Android Developer  
 **Labels:** `scaffold`, `android`, `gradle`, `kotlin`
@@ -59,16 +59,16 @@ Create a working Android project that compiles from the command line and can be 
 
 ### Acceptance criteria
 
-- [ ] Project structure follows modern Android conventions (`app/src/main/...`).
-- [ ] `build.gradle.kts` (project and app) configured for Kotlin and Compose.
-- [ ] `minSdk = 31`, `targetSdk = 35`, `compileSdk = 35`.
-- [ ] Gradle wrapper committed.
-- [ ] `./gradlew build` passes.
-- [ ] `./gradlew assembleDebug` produces an APK.
-- [ ] `./gradlew installDebug` installs on the emulator.
-- [ ] `MainActivity` launches and shows a placeholder screen.
-- [ ] `.gitignore` excludes `local.properties`, build dirs, `.idea`, etc.
-- [ ] Basic README in `app/` explains how to build.
+- [x] Project structure follows modern Android conventions (`app/src/main/...`).
+- [x] `build.gradle.kts` (project and app) configured for Kotlin and Compose.
+- [x] `minSdk = 31`, `targetSdk = 35`, `compileSdk = 35`.
+- [x] Gradle wrapper committed.
+- [x] `./gradlew build` passes.
+- [x] `./gradlew assembleDebug` produces an APK.
+- [x] `./gradlew installDebug` installs on the emulator.
+- [x] `MainActivity` launches and shows a placeholder screen.
+- [x] `.gitignore` excludes `local.properties`, build dirs, `.idea`, etc.
+- [x] Basic README in `app/` explains how to build.
 
 ### Notes
 
