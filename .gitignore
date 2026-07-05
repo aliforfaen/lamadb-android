@@ -1,10 +1,22 @@
+# Gradle / Android Studio
 *.iml
 .gradle/
 /local.properties
 /.idea
 /build
-/captures
-.externalNativeBuild
+/captures/
+.externalNativeBuild/
 .cxx/
-local.properties
+
+# Project-specific
 .superpowers/
+local.properties
+
+# Build outputs
+*/build/
+*.apk
+*.ap_
+*.aab
+
+# macOS
+.DS_Store
