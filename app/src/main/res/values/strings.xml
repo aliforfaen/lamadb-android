@@ -3,4 +3,23 @@
     <string name="app_name">LamaDB</string>
     <string name="placeholder_title">LamaDB Android</string>
     <string name="placeholder_body">Skeleton is up and running.</string>
+
+    <string name="presence_notification_title">LamaDB presence</string>
+    <string name="presence_notification_home">Home</string>
+    <string name="presence_notification_away">Away</string>
+    <string name="presence_notification_unknown">Waiting for WiFi…</string>
+
+    <string name="presence_channel_name">Presence service</string>
+    <string name="presence_channel_description">Persistent notification for WiFi presence detection.</string>
+
+    <string name="presence_setup_title">Set up home WiFi</string>
+    <string name="presence_setup_body">LamaDB can detect when you are home by watching for your home WiFi network. Enter the SSID below.</string>
+    <string name="presence_setup_ssid_label">Home WiFi name (SSID)</string>
+    <string name="presence_setup_confirm">Enable presence</string>
+    <string name="presence_setup_skip">Skip</string>
+
+    <string name="presence_permission_title">Permission required</string>
+    <string name="presence_permission_body">Location and notification permissions are needed to read the WiFi SSID and show the persistent presence service notification.</string>
+    <string name="presence_permission_grant">Grant</string>
+    <string name="presence_permission_deny">Not now</string>
 </resources>

@@ -27,10 +27,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lamadb.android.data.auth.AuthRepository
 import com.lamadb.android.data.auth.SecureTokenStore
+import com.lamadb.android.presence.PresencePreferences
+import com.lamadb.android.presence.PresenceService
 import com.lamadb.android.theme.LamaDBTheme
 import com.lamadb.android.ui.auth.AuthState
 import com.lamadb.android.ui.auth.AuthViewModel
 import com.lamadb.android.ui.login.LoginScreen
+import com.lamadb.android.ui.presence.PresenceSetupDialog
 import com.lamadb.android.ui.qr.QrScannerScreen
 
 class MainActivity : ComponentActivity() {
@@ -46,6 +49,11 @@ class MainActivity : ComponentActivity() {
                     )
                 )
                 val state by viewModel.state.collectAsState()
+
+                // Ensure the auth check runs once on first composition.
+                remember { viewModel.checkAuth(); true }
+
+                var showPresenceSetup by remember { mutableStateOf(false) }
 
                 when (state) {
                     AuthState.Checking -> {
@@ -66,6 +74,25 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     AuthState.Authenticated -> {
+                        val context = this@MainActivity
+                        val preferences = remember { PresencePreferences(context) }
+                        if (!preferences.isSetupComplete && !showPresenceSetup) {
+                            showPresenceSetup = true
+                        }
+
+                        if (showPresenceSetup) {
+                            PresenceSetupDialog(
+                                onDismiss = {
+                                    showPresenceSetup = false
+                                    PresenceService.start(context)
+                                },
+                                onComplete = {
+                                    showPresenceSetup = false
+                                    PresenceService.start(context)
+                                }
+                            )
+                        }
+
                         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                             PlaceholderScreen(
                                 modifier = Modifier.padding(innerPadding)
@@ -76,6 +103,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 }
 
 class AuthViewModelFactory(

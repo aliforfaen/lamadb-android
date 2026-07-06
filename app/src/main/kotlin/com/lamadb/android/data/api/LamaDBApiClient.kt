@@ -51,6 +51,10 @@ class LamaDBApiClient(
         client.post("/api/android/provision") { setBody(request) }.body()
     }
 
+    suspend fun postEvent(event: EventRequest): Result<Unit> = apiCall {
+        client.post("/api/events") { setBody(event) }.body()
+    }
+
     private suspend inline fun <T> apiCall(block: () -> T): Result<T> = try {
         Result.success(block())
     } catch (e: ClientRequestException) {
