@@ -65,6 +65,8 @@ class EventRepository(
         dao.deleteOlderThan(cutoff)
     }
 
+    suspend fun count(): Int = dao.count()
+
     private fun QueuedEvent.toRequest(): EventRequest? = try {
         EventRequest(
             source = source,

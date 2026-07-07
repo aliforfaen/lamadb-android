@@ -4,6 +4,13 @@
     <string name="placeholder_title">LamaDB Android</string>
     <string name="placeholder_body">Skeleton is up and running.</string>
 
+    <!-- Bottom navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_tasks">Tasks</string>
+    <string name="nav_health">Health</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Presence -->
     <string name="presence_notification_title">LamaDB presence</string>
     <string name="presence_notification_home">Home</string>
     <string name="presence_notification_away">Away</string>
@@ -22,4 +29,38 @@
     <string name="presence_permission_body">Location and notification permissions are needed to read the WiFi SSID and show the persistent presence service notification.</string>
     <string name="presence_permission_grant">Grant</string>
     <string name="presence_permission_deny">Not now</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_server_url">LamaDB server</string>
+    <string name="settings_material_you">Material You</string>
+    <string name="settings_material_you_hint">Use wallpaper colors for the app theme (Android 12+)</string>
+    <string name="settings_reset_presence">Re-run presence setup</string>
+    <string name="settings_logout">Log out</string>
+    <string name="settings_version">Version %1$s</string>
+
+    <!-- Scheduled tasks -->
+    <string name="tasks_title">Scheduled tasks</string>
+    <string name="tasks_subtitle">Overview of background work and data flows.</string>
+    <string name="tasks_presence_title">WiFi presence</string>
+    <string name="tasks_presence_disabled">Not configured</string>
+    <string name="tasks_presence_home">Home SSID: %1$s</string>
+    <string name="tasks_presence_device">Device: %1$s</string>
+    <string name="tasks_queue_title">Event queue</string>
+    <string name="tasks_queue_count">%1$d events queued</string>
+    <string name="tasks_drain_now">Drain now</string>
+    <plurals name="tasks_drain_result">
+        <item quantity="one">Sent %1$d event</item>
+        <item quantity="other">Sent %1$d events</item>
+    </plurals>
+
+    <!-- Health data -->
+    <string name="health_title">Health data</string>
+    <string name="health_subtitle">Sync health metrics from your device.</string>
+    <string name="health_sync_toggle">Enable health sync</string>
+    <string name="health_sync_toggle_hint">Prepare the app to read Samsung Health / Health Connect data.</string>
+    <string name="health_status_title">Sync status</string>
+    <string name="health_last_sync">Last sync: %1$s</string>
+    <string name="health_never_synced">Not synced yet</string>
+    <string name="health_coming_soon">Samsung Health and Health Connect integration is planned for a future update.</string>
 </resources>

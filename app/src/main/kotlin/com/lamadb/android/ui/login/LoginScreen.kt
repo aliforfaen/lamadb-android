@@ -18,7 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,9 +36,11 @@ fun LoginScreen(
     onScanQr: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var serverUrl by remember { mutableStateOf("https://lamadb.tailnet") }
-    var apiKey by remember { mutableStateOf("") }
+    var serverUrl by rememberSaveable { mutableStateOf("https://lamadb.tailnet") }
+    var apiKey by rememberSaveable { mutableStateOf("") }
     val authState by viewModel.state.collectAsState()
+    val isLoading = authState is com.lamadb.android.ui.auth.AuthState.Checking
+    val errorMessage = (authState as? com.lamadb.android.ui.auth.AuthState.Error)?.message
 
     Column(
         modifier = modifier
@@ -81,24 +83,45 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        errorMessage?.let {
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         Button(
             onClick = { viewModel.login(apiKey, serverUrl) },
-            enabled = serverUrl.isNotBlank() && apiKey.isNotBlank(),
+            enabled = serverUrl.isNotBlank() && apiKey.isNotBlank() && !isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Log in")
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.height(20.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Log in")
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedButton(
             onClick = onScanQr,
+            enabled = !isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Scan QR code")
         }
 
-        if (authState is com.lamadb.android.ui.auth.AuthState.Checking) {
+        if (isLoading) {
             Spacer(modifier = Modifier.height(16.dp))
             CircularProgressIndicator()
         }

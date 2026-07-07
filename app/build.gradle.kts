@@ -40,6 +40,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
@@ -78,6 +79,11 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.4")
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+
+    // WebView + pull-to-refresh + icons
+    implementation("androidx.webkit:webkit:1.11.0")
+    implementation("androidx.compose.material:material")
+    implementation("androidx.compose.material:material-icons-extended:1.6.8")
 
     // Background work + local queue
     implementation("androidx.work:work-runtime-ktx:2.9.0")
