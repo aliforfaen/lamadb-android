@@ -60,6 +60,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val themePreferences = remember { ThemePreferences(context) }
     val batteryPreferences = remember { BatteryOptimizationPreferences(context) }
+    val batteryHelper = remember { BatteryOptimizationHelper(context) }
     val logPreferences = remember { LogPreferences(context) }
     var useDynamicColor by remember {
         mutableStateOf(themePreferences.useDynamicColor && themePreferences.supportsDynamicColor)
@@ -68,7 +69,7 @@ fun SettingsScreen(
     var loggingEnabled by remember { mutableStateOf(logPreferences.loggingEnabled) }
     var showBatteryCard by remember {
         mutableStateOf(
-            !BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context) &&
+            !batteryHelper.isIgnoringBatteryOptimizations() &&
                 !batteryPreferences.guidanceDismissed
         )
     }
