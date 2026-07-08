@@ -3,6 +3,7 @@ package com.lamadb.android.ui.dashboard
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.webkit.SslErrorHandler
+import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -114,7 +115,17 @@ fun DashboardScreen(
             )
             addJavascriptInterface(jsBridge, JS_BRIDGE_NAME)
 
-            webChromeClient = WebChromeClient()
+            webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(message: ConsoleMessage?): Boolean {
+                    val line = "[DashboardJS] ${message?.sourceId()}:${message?.lineNumber()} ${message?.message()}"
+                    when (message?.messageLevel()) {
+                        ConsoleMessage.MessageLevel.ERROR -> AppLogger.e(TAG, line)
+                        ConsoleMessage.MessageLevel.WARNING -> AppLogger.w(TAG, line)
+                        else -> AppLogger.d(TAG, line)
+                    }
+                    return true
+                }
+            }
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     isRefreshing = true
