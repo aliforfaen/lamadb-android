@@ -17,7 +17,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.lamadb.android.MainActivity
@@ -25,6 +24,7 @@ import com.lamadb.android.R
 import com.lamadb.android.data.api.EventRequest
 import com.lamadb.android.data.events.EventDrainWorker
 import com.lamadb.android.data.events.EventRepository
+import com.lamadb.android.logging.AppLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -72,7 +72,7 @@ class PresenceService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "Presence service started")
+        AppLogger.i(TAG, "Presence service started")
         startForeground(NOTIFICATION_ID, buildNotification(stateMachine.currentState()))
         scheduleDrainWorker()
         registerNetworkCallback()
@@ -126,14 +126,14 @@ class PresenceService : Service() {
     @Suppress("DEPRECATION")
     private fun readCurrentSsid(): String? {
         if (!hasLocationPermission()) {
-            Log.w(TAG, "Location permission missing; cannot read SSID")
+            AppLogger.w(TAG, "Location permission missing; cannot read SSID")
             return null
         }
         return try {
             val ssid = wifiManager.connectionInfo?.ssid
             if (ssid == null || ssid == WifiManager.UNKNOWN_SSID) null else ssid
         } catch (e: SecurityException) {
-            Log.e(TAG, "Failed to read SSID", e)
+            AppLogger.e(TAG, "Failed to read SSID", e)
             null
         }
     }
@@ -173,7 +173,7 @@ class PresenceService : Service() {
         )
         eventRepository.enqueue(request)
         EventDrainWorker.schedule(this) // try to flush soon
-        Log.d(TAG, "Queued presence event: ${event.state} (ssid=${event.ssid})")
+        AppLogger.i(TAG, "Queued presence event: ${event.state} (ssid=${event.ssid})")
     }
 
     private fun updateNotification(state: PresenceState) {

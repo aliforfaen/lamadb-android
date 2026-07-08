@@ -15,6 +15,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import com.lamadb.android.theme.ThemeMode
 import com.lamadb.android.ui.dashboard.DashboardScreen
 import com.lamadb.android.ui.health.HealthDataScreen
 import com.lamadb.android.ui.settings.SettingsScreen
@@ -24,10 +25,14 @@ import com.lamadb.android.ui.tasks.ScheduledTasksScreen
 fun AppScaffold(
     serverUrl: String,
     apiKey: String,
+    themeMode: ThemeMode,
     onOpenQrScanner: () -> Unit,
     onLogout: () -> Unit,
     onResetPresence: () -> Unit,
+    onViewLogs: () -> Unit = {},
+    onReplayOnboarding: () -> Unit = {},
     onDynamicColorChanged: (Boolean) -> Unit = {},
+    onThemeModeChanged: (ThemeMode) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selected by rememberSaveable { mutableStateOf(AppDestination.Dashboard) }
@@ -52,6 +57,7 @@ fun AppScaffold(
                 AppDestination.Dashboard -> DashboardScreen(
                     serverUrl = serverUrl,
                     apiKey = apiKey,
+                    themeMode = themeMode,
                     onOpenQrScanner = onOpenQrScanner
                 )
 
@@ -59,9 +65,13 @@ fun AppScaffold(
                 AppDestination.Health -> HealthDataScreen()
                 AppDestination.Settings -> SettingsScreen(
                     serverUrl = serverUrl,
+                    themeMode = themeMode,
                     onLogout = onLogout,
                     onResetPresence = onResetPresence,
-                    onDynamicColorChanged = onDynamicColorChanged
+                    onViewLogs = onViewLogs,
+                    onReplayOnboarding = onReplayOnboarding,
+                    onDynamicColorChanged = onDynamicColorChanged,
+                    onThemeModeChanged = onThemeModeChanged
                 )
             }
         }

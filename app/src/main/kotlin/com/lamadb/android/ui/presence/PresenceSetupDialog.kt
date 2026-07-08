@@ -31,8 +31,11 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.lamadb.android.R
+import com.lamadb.android.power.BatteryOptimizationHelper
+import com.lamadb.android.power.BatteryOptimizationPreferences
 import com.lamadb.android.presence.PresencePreferences
 import com.lamadb.android.presence.PresenceService
+import com.lamadb.android.ui.power.BatteryOptimizationCard
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -42,8 +45,16 @@ fun PresenceSetupDialog(
 ) {
     val context = LocalContext.current
     val preferences = remember { PresencePreferences(context) }
+    val batteryPreferences = remember { BatteryOptimizationPreferences(context) }
     var homeSsid by remember { mutableStateOf(preferences.homeSsid ?: readCurrentSsid(context)) }
     var showRationale by remember { mutableStateOf(false) }
+    val shouldShowBatteryGuidance = remember {
+        BatteryOptimizationHelper.isSamsungDevice() &&
+            !BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context) &&
+            !batteryPreferences.guidanceDismissed
+    }
+    var showBatteryGuidance by remember { mutableStateOf(false) }
+    var mainDialogVisible by remember { mutableStateOf(true) }
 
     val permissionState = rememberMultiplePermissionsState(
         permissions = buildList {
@@ -71,52 +82,59 @@ fun PresenceSetupDialog(
         }
     }
 
-    AlertDialog(
-        onDismissRequest = { },
-        title = { Text(stringResource(R.string.presence_setup_title)) },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = stringResource(R.string.presence_setup_body),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = homeSsid,
-                    onValueChange = { homeSsid = it },
-                    label = { Text(stringResource(R.string.presence_setup_ssid_label)) },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (homeSsid.isBlank()) return@Button
-                    preferences.homeSsid = homeSsid
-                    if (permissionState.allPermissionsGranted) {
-                        PresenceService.start(context)
-                        onComplete()
-                    } else {
-                        if (permissionState.shouldShowRationale) {
-                            showRationale = true
+    if (mainDialogVisible) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text(stringResource(R.string.presence_setup_title)) },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = stringResource(R.string.presence_setup_body),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = homeSsid,
+                        onValueChange = { homeSsid = it },
+                        label = { Text(stringResource(R.string.presence_setup_ssid_label)) },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (homeSsid.isBlank()) return@Button
+                        preferences.homeSsid = homeSsid
+                        if (permissionState.allPermissionsGranted) {
+                            PresenceService.start(context)
+                            if (shouldShowBatteryGuidance) {
+                                mainDialogVisible = false
+                                showBatteryGuidance = true
+                            } else {
+                                onComplete()
+                            }
                         } else {
-                            permissionState.launchMultiplePermissionRequest()
+                            if (permissionState.shouldShowRationale) {
+                                showRationale = true
+                            } else {
+                                permissionState.launchMultiplePermissionRequest()
+                            }
                         }
-                    }
-                },
-                enabled = homeSsid.isNotBlank()
-            ) {
-                Text(stringResource(R.string.presence_setup_confirm))
+                    },
+                    enabled = homeSsid.isNotBlank()
+                ) {
+                    Text(stringResource(R.string.presence_setup_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.presence_setup_skip))
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.presence_setup_skip))
-            }
-        }
-    )
+        )
+    }
 
     if (showRationale) {
         AlertDialog(
@@ -136,6 +154,28 @@ fun PresenceSetupDialog(
                     Text(stringResource(R.string.presence_permission_deny))
                 }
             }
+        )
+    }
+
+    if (showBatteryGuidance) {
+        AlertDialog(
+            onDismissRequest = {
+                showBatteryGuidance = false
+                onComplete()
+            },
+            title = { Text(stringResource(R.string.battery_optimization_title)) },
+            text = {
+                BatteryOptimizationCard(
+                    onDismiss = {
+                        batteryPreferences.guidanceDismissed = true
+                        showBatteryGuidance = false
+                        onComplete()
+                    },
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            },
+            confirmButton = {},
+            dismissButton = {}
         )
     }
 }

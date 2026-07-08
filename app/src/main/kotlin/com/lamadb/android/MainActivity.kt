@@ -16,28 +16,38 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lamadb.android.data.auth.AuthRepository
 import com.lamadb.android.data.auth.SecureTokenStore
+import com.lamadb.android.logging.AppLogger
+import com.lamadb.android.onboarding.OnboardingPreferences
 import com.lamadb.android.presence.PresencePreferences
 import com.lamadb.android.presence.PresenceService
 import com.lamadb.android.theme.LamaDBTheme
+import com.lamadb.android.theme.ThemeMode
 import com.lamadb.android.theme.ThemePreferences
 import com.lamadb.android.ui.auth.AuthState
 import com.lamadb.android.ui.auth.AuthViewModel
+import com.lamadb.android.ui.logs.LogViewerScreen
 import com.lamadb.android.ui.login.LoginScreen
 import com.lamadb.android.ui.main.AppScaffold
+import com.lamadb.android.ui.onboarding.OnboardingScreen
 import com.lamadb.android.ui.presence.PresenceSetupDialog
 import com.lamadb.android.ui.qr.QrScannerScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppLogger.init(this)
         enableEdgeToEdge()
 
         setContent {
             val context = this@MainActivity
             val themePreferences = remember { ThemePreferences(context) }
             var dynamicColor by remember { mutableStateOf(themePreferences.useDynamicColor) }
+            var themeMode by remember { mutableStateOf(themePreferences.themeMode) }
 
-            LamaDBTheme(dynamicColor = dynamicColor) {
+            LamaDBTheme(
+                dynamicColor = dynamicColor,
+                themeMode = themeMode
+            ) {
                 val viewModel: AuthViewModel = viewModel(
                     factory = AuthViewModelFactory(
                         AuthRepository(SecureTokenStore(context))
@@ -54,24 +64,44 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthState.Login, is AuthState.Error -> {
-                        var showScanner by remember { mutableStateOf(false) }
-                        if (showScanner) {
-                            QrScannerScreen(
-                                viewModel = viewModel,
-                                onBack = { showScanner = false }
+                        val onboardingPreferences = remember { OnboardingPreferences(context) }
+                        var showOnboarding by remember {
+                            mutableStateOf(!onboardingPreferences.onboardingCompleted)
+                        }
+
+                        if (showOnboarding) {
+                            OnboardingScreen(
+                                onGetStarted = {
+                                    onboardingPreferences.onboardingCompleted = true
+                                    showOnboarding = false
+                                },
+                                onSkip = {
+                                    onboardingPreferences.onboardingCompleted = true
+                                    showOnboarding = false
+                                }
                             )
                         } else {
-                            LoginScreen(
-                                viewModel = viewModel,
-                                onScanQr = { showScanner = true }
-                            )
+                            var showScanner by remember { mutableStateOf(false) }
+                            if (showScanner) {
+                                QrScannerScreen(
+                                    viewModel = viewModel,
+                                    onBack = { showScanner = false }
+                                )
+                            } else {
+                                LoginScreen(
+                                    viewModel = viewModel,
+                                    onScanQr = { showScanner = true }
+                                )
+                            }
                         }
                     }
 
                     AuthState.Authenticated -> {
                         AuthenticatedContent(
                             viewModel = viewModel,
-                            onDynamicColorChanged = { dynamicColor = it }
+                            themeMode = themeMode,
+                            onDynamicColorChanged = { dynamicColor = it },
+                            onThemeModeChanged = { themeMode = it }
                         )
                     }
                 }
@@ -83,7 +113,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun AuthenticatedContent(
     viewModel: AuthViewModel,
-    onDynamicColorChanged: (Boolean) -> Unit
+    themeMode: ThemeMode,
+    onDynamicColorChanged: (Boolean) -> Unit,
+    onThemeModeChanged: (ThemeMode) -> Unit
 ) {
     val context = LocalContext.current
     val tokenStore = remember { SecureTokenStore(context) }
@@ -92,6 +124,12 @@ private fun AuthenticatedContent(
 
     var showPresenceSetup by remember { mutableStateOf(!presencePreferences.isSetupComplete) }
     var showDashboardScanner by remember { mutableStateOf(false) }
+    var showLogViewer by remember { mutableStateOf(false) }
+
+    if (showLogViewer) {
+        LogViewerScreen(onBack = { showLogViewer = false })
+        return
+    }
 
     if (showDashboardScanner) {
         QrScannerScreen(
@@ -118,6 +156,7 @@ private fun AuthenticatedContent(
     AppScaffold(
         serverUrl = credentials?.serverUrl ?: "",
         apiKey = credentials?.apiKey ?: "",
+        themeMode = themeMode,
         onOpenQrScanner = { showDashboardScanner = true },
         onLogout = {
             PresenceService.stop(context)
@@ -128,7 +167,13 @@ private fun AuthenticatedContent(
             presencePreferences.homeSsid = null
             showPresenceSetup = true
         },
-        onDynamicColorChanged = onDynamicColorChanged
+        onViewLogs = { showLogViewer = true },
+        onReplayOnboarding = {
+            OnboardingPreferences(context).onboardingCompleted = false
+            viewModel.logout()
+        },
+        onDynamicColorChanged = onDynamicColorChanged,
+        onThemeModeChanged = onThemeModeChanged
     )
 }
 

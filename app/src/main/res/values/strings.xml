@@ -30,11 +30,51 @@
     <string name="presence_permission_grant">Grant</string>
     <string name="presence_permission_deny">Not now</string>
 
+    <!-- Dashboard -->
+    <string name="dashboard_status_online">Online</string>
+    <string name="dashboard_status_offline">Offline</string>
+    <string name="dashboard_error_title">Couldn’t load dashboard</string>
+    <string name="dashboard_error_retry">Retry</string>
+
+    <!-- Battery optimization -->
+    <string name="battery_optimization_title">Keep presence running</string>
+    <string name="battery_optimization_body">Battery optimization may stop LamaDB in the background. If presence detection feels unreliable, disable optimization for this app.</string>
+    <string name="battery_optimization_samsung_body">Samsung Device Care can kill LamaDB in the background and stop presence detection. For best results, add LamaDB to Settings → Battery → Background usage limits → Never sleeping apps, or disable battery optimization for LamaDB.</string>
+    <string name="battery_optimization_open_settings">Open settings</string>
+    <string name="battery_optimization_dismiss">Not now</string>
+
+    <!-- Log viewer -->
+    <string name="log_viewer_title">Debug logs</string>
+    <string name="log_viewer_back">Back</string>
+    <string name="log_viewer_share">Share logs</string>
+    <string name="log_viewer_share_title">Share LamaDB logs</string>
+    <string name="log_viewer_filter_hint">Filter by tag</string>
+    <string name="log_viewer_empty">No logs captured yet.</string>
+    <string name="settings_debug_logs">Debug logs</string>
+    <string name="settings_debug_logs_hint">Capture recent app logs for troubleshooting</string>
+    <string name="settings_view_logs">View logs</string>
+    <string name="settings_replay_onboarding">Replay introduction</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_dashboard_title">Your dashboard, anywhere</string>
+    <string name="onboarding_dashboard_body">Access your LamaDB dashboard from your phone — automations, events, and status at a glance.</string>
+    <string name="onboarding_presence_title">WiFi presence</string>
+    <string name="onboarding_presence_body">LamaDB can detect when you are home or away by watching your home WiFi network, so automations just work.</string>
+    <string name="onboarding_security_title">Secure by default</string>
+    <string name="onboarding_security_body">Your API key is encrypted on the device. Nothing sensitive is logged or sent in plain text.</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_get_started">Get started</string>
+
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="settings_server_url">LamaDB server</string>
     <string name="settings_material_you">Material You</string>
     <string name="settings_material_you_hint">Use wallpaper colors for the app theme (Android 12+)</string>
+    <string name="settings_dark_mode">Dark mode</string>
+    <string name="settings_dark_mode_system">System</string>
+    <string name="settings_dark_mode_light">Light</string>
+    <string name="settings_dark_mode_dark">Dark</string>
     <string name="settings_reset_presence">Re-run presence setup</string>
     <string name="settings_logout">Log out</string>
     <string name="settings_version">Version %1$s</string>
