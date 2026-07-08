@@ -46,11 +46,12 @@ fun PresenceSetupDialog(
     val context = LocalContext.current
     val preferences = remember { PresencePreferences(context) }
     val batteryPreferences = remember { BatteryOptimizationPreferences(context) }
+    val batteryHelper = remember { BatteryOptimizationHelper(context) }
     var homeSsid by remember { mutableStateOf(preferences.homeSsid ?: readCurrentSsid(context)) }
     var showRationale by remember { mutableStateOf(false) }
     val shouldShowBatteryGuidance = remember {
-        BatteryOptimizationHelper.isSamsungDevice() &&
-            !BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context) &&
+        batteryHelper.isSamsungDevice() &&
+            !batteryHelper.isIgnoringBatteryOptimizations() &&
             !batteryPreferences.guidanceDismissed
     }
     var showBatteryGuidance by remember { mutableStateOf(false) }

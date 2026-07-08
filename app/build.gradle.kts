@@ -95,6 +95,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     testImplementation("io.ktor:ktor-client-mock:2.3.11")
     testImplementation("io.mockk:mockk:1.13.11")
+    testImplementation("org.robolectric:robolectric:4.12.2")
 
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")

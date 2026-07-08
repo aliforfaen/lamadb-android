@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -29,6 +30,7 @@ fun BatteryOptimizationCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val batteryHelper = remember { BatteryOptimizationHelper(context) }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -57,7 +59,7 @@ fun BatteryOptimizationCard(
             }
 
             Text(
-                text = if (BatteryOptimizationHelper.isSamsungDevice()) {
+                text = if (batteryHelper.isSamsungDevice()) {
                     stringResource(R.string.battery_optimization_samsung_body)
                 } else {
                     stringResource(R.string.battery_optimization_body)
@@ -75,7 +77,7 @@ fun BatteryOptimizationCard(
                 }
                 Button(
                     onClick = {
-                        BatteryOptimizationHelper.openBatteryOptimizationSettings(context)
+                        batteryHelper.openBatteryOptimizationSettings()
                         onDismiss()
                     },
                     modifier = Modifier.padding(start = 8.dp)

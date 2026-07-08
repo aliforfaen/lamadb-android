@@ -13,21 +13,32 @@ import android.provider.Settings
  * Samsung Device Care and similar vendor layers kill background apps aggressively.
  * We cannot force the user to disable optimization, but we can detect it and
  * open the system settings so they can whitelist LamaDB if they choose.
+ *
+ * @param powerManager Injected for unit tests; defaults to the system service.
  */
-object BatteryOptimizationHelper {
+class BatteryOptimizationHelper(
+    private val context: Context,
+    private val powerManager: PowerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager,
+    private val manufacturer: String = Build.MANUFACTURER
+) {
 
-    fun isIgnoringBatteryOptimizations(context: Context): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
-        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+    /**
+     * True when the app is allowed to run in the background unrestricted.
+     * minSdk is 31, so the API 23 guard is unnecessary.
+     */
+    fun isIgnoringBatteryOptimizations(): Boolean {
         return powerManager.isIgnoringBatteryOptimizations(context.packageName)
     }
 
-    fun openBatteryOptimizationSettings(context: Context) {
-        val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+    fun batteryOptimizationSettingsIntent(): Intent {
+        return Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
             data = Uri.parse("package:${context.packageName}")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
-        context.startActivity(intent)
+    }
+
+    fun openBatteryOptimizationSettings() {
+        context.startActivity(batteryOptimizationSettingsIntent())
     }
 
     /**
@@ -35,6 +46,6 @@ object BatteryOptimizationHelper {
      * is known to kill foreground services; the UI copy still applies to most vendors.
      */
     fun isSamsungDevice(): Boolean {
-        return Build.MANUFACTURER.equals("samsung", ignoreCase = true)
+        return manufacturer.equals("samsung", ignoreCase = true)
     }
 }
