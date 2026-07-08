@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.lamadb.android.BuildConfig
 import com.lamadb.android.R
 import com.lamadb.android.ui.auth.AuthViewModel
 
@@ -119,6 +120,21 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Scan QR code")
+        }
+
+        if (BuildConfig.LAMADB_TEST_URL.isNotBlank() && BuildConfig.LAMADB_TEST_API_KEY.isNotBlank()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = {
+                    serverUrl = BuildConfig.LAMADB_TEST_URL
+                    apiKey = BuildConfig.LAMADB_TEST_API_KEY
+                    viewModel.login(apiKey, serverUrl)
+                },
+                enabled = !isLoading,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Debug log in")
+            }
         }
 
         if (isLoading) {

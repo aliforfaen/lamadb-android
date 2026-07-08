@@ -29,6 +29,29 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "LAMADB_TEST_URL", "\"\"")
+            buildConfigField("String", "LAMADB_TEST_API_KEY", "\"\"")
+        }
+        debug {
+            val env = rootProject.file(".env.test")
+            var testUrl = ""
+            var testKey = ""
+            if (env.exists()) {
+                env.readLines().forEach { line ->
+                    val trimmed = line.trim()
+                    if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
+                        val parts = trimmed.split("=", limit = 2)
+                        if (parts.size == 2) {
+                            when (parts[0].trim()) {
+                                "LAMADB_TEST_URL" -> testUrl = parts[1].trim()
+                                "LAMADB_TEST_API_KEY" -> testKey = parts[1].trim()
+                            }
+                        }
+                    }
+                }
+            }
+            buildConfigField("String", "LAMADB_TEST_URL", "\"$testUrl\"")
+            buildConfigField("String", "LAMADB_TEST_API_KEY", "\"$testKey\"")
         }
     }
     compileOptions {
