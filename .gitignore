@@ -12,6 +12,9 @@
 .superpowers/
 docs/superpowers/
 local.properties
+.env
+.env.*
+!.env.example
 
 # Build outputs
 */build/
