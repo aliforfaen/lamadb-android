@@ -1,6 +1,7 @@
 package com.lamadb.android.ui.main
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Schedule
@@ -13,6 +14,7 @@ enum class AppDestination(
     val icon: ImageVector
 ) {
     Dashboard(R.string.nav_dashboard, Icons.Filled.Dashboard),
+    Wiki(R.string.nav_wiki, Icons.AutoMirrored.Filled.MenuBook),
     Tasks(R.string.nav_tasks, Icons.Filled.Schedule),
     Health(R.string.nav_health, Icons.Filled.Favorite),
     Settings(R.string.nav_settings, Icons.Filled.Settings)

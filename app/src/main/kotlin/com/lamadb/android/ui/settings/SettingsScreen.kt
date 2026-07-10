@@ -116,6 +116,8 @@ fun SettingsScreen(
             }
         }
 
+        PushSettingsCard()
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(

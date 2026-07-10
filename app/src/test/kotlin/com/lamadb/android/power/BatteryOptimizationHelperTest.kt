@@ -47,7 +47,9 @@ class BatteryOptimizationHelperTest {
         val intent = helper.batteryOptimizationSettingsIntent()
 
         assertEquals(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS, intent.action)
-        assertEquals("package:${context.packageName}", intent.data.toString())
+        // The IGNORE_BATTERY_OPTIMIZATION_SETTINGS action opens a system list, not a
+        // per-app page; a package URI is ignored and can break resolution on some devices.
+        assertEquals(null, intent.data)
         assertTrue((intent.flags and Intent.FLAG_ACTIVITY_NEW_TASK) != 0)
     }
 

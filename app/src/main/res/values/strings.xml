@@ -6,6 +6,7 @@
 
     <!-- Bottom navigation -->
     <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_wiki">Wiki</string>
     <string name="nav_tasks">Tasks</string>
     <string name="nav_health">Health</string>
     <string name="nav_settings">Settings</string>
@@ -78,6 +79,53 @@
     <string name="settings_reset_presence">Re-run presence setup</string>
     <string name="settings_logout">Log out</string>
     <string name="settings_version">Version %1$s</string>
+
+    <!-- Push notifications -->
+    <string name="push_settings_title">Push notifications</string>
+    <string name="push_settings_body">Poll the LamaDB ntfy topic for critical alerts.</string>
+    <string name="push_enable_toggle">Enable ntfy push</string>
+    <string name="push_enable_toggle_hint">Self-hosted, no Google services required.</string>
+    <string name="push_ntfy_url_label">ntfy server URL</string>
+    <string name="push_ntfy_topic_label">ntfy topic</string>
+    <string name="push_test_button">Send test notification</string>
+    <string name="push_permission_required">Notification permission is required for push alerts.</string>
+    <string name="push_test_title">LamaDB push test</string>
+    <string name="push_test_message">If you see this, push notifications are working.</string>
+    <string name="push_notification_default_title">LamaDB alert</string>
+
+    <string name="push_channel_critical_name">Critical alerts</string>
+    <string name="push_channel_critical_description">Requires immediate attention.</string>
+    <string name="push_channel_high_name">High priority</string>
+    <string name="push_channel_high_description">Important notifications.</string>
+    <string name="push_channel_default_name">Default</string>
+    <string name="push_channel_default_description">General notifications.</string>
+    <string name="push_channel_low_name">Low priority</string>
+    <string name="push_channel_low_description">Background updates and low-priority info.</string>
+
+    <!-- Widget -->
+    <string name="widget_title">LamaDB events</string>
+    <string name="widget_refresh">Refresh</string>
+    <string name="widget_empty_text">No recent events</string>
+    <string name="widget_not_logged_in">Sign in to view events</string>
+
+    <!-- Wiki -->
+    <string name="wiki_title">Wiki</string>
+    <string name="wiki_subtitle">Cached llm-wiki pages from LamaDB.</string>
+    <string name="wiki_sync">Sync wiki</string>
+    <string name="wiki_sync_failed">Wiki sync failed</string>
+    <string name="wiki_empty_title">No wiki pages cached</string>
+    <string name="wiki_empty_body">Tap the refresh button to download the wiki index.</string>
+    <string name="wiki_section_other">Other</string>
+    <string name="wiki_cached">Cached for offline</string>
+    <string name="wiki_page_loading">Loading…</string>
+    <string name="wiki_page_back">Back</string>
+    <string name="wiki_page_refresh">Refresh page</string>
+    <string name="wiki_load_failed">Couldn’t load page</string>
+    <string name="wiki_page_empty">This page has no content yet.</string>
+    <plurals name="wiki_sync_result">
+        <item quantity="one">%1$d page cached</item>
+        <item quantity="other">%1$d pages cached</item>
+    </plurals>
 
     <!-- Scheduled tasks -->
     <string name="tasks_title">Scheduled tasks</string>

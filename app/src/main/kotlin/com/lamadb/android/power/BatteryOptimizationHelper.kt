@@ -32,13 +32,27 @@ class BatteryOptimizationHelper(
 
     fun batteryOptimizationSettingsIntent(): Intent {
         return Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+            // This action opens a system list, not a per-app page; a package URI is
+            // ignored by some OEM settings apps and can even cause ActivityNotFound.
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+    }
+
+    private fun applicationDetailsIntent(): Intent {
+        return Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.parse("package:${context.packageName}")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
     }
 
     fun openBatteryOptimizationSettings() {
-        context.startActivity(batteryOptimizationSettingsIntent())
+        try {
+            context.startActivity(batteryOptimizationSettingsIntent())
+        } catch (_: android.content.ActivityNotFoundException) {
+            // Fall back to the generic app-info page where the user can still reach
+            // battery settings on devices without the dedicated screen.
+            context.startActivity(applicationDetailsIntent())
+        }
     }
 
     /**

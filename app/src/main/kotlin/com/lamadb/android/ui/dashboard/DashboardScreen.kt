@@ -139,6 +139,10 @@ fun DashboardScreen(
                     if (error != null) {
                         loadState = DashboardLoadState.Error(error)
                     } else {
+                        injectViewportFix(view)
+                        injectWebViewCss(view)
+
+
                         loadState = DashboardLoadState.Success
                         injectDashboardBridge(view)
                         injectAuthToken(view, apiKey)
@@ -369,6 +373,61 @@ private fun currentPresenceJson(presencePreferences: PresencePreferences): Strin
     // requestPresence() when it needs a fresher value. For the initial page load we
     // report unknown because the foreground service state is not persisted.
     return """{"state":"unknown","home_ssid":"${presencePreferences.homeSsid.orEmpty().jsString}","device_id":"${presencePreferences.deviceId.jsString}"}"""
+}
+
+/**
+ * Fixes a WebView-specific layout bug where CSS `height: 100%` and `100vh` resolve to
+ * 0px on the `<html>` element because the WebView's initial containing block has not
+ * received its final layout dimensions at CSS-computation time.
+ *
+ * The script sets explicit pixel-based `minHeight` on `<html>` and `<body>` using
+ * `window.innerHeight`, then listens for resize events to re-apply after rotation.
+ * This runs before auth/theme/presence injections so the page is visible when the
+ * bridge is ready.
+ */
+private fun injectViewportFix(view: WebView?) {
+    view?.evaluateJavascript(
+        """
+        (function() {
+            console.log('[viewportFix] fixing WebView root height collapse');
+            function applyFix() {
+                var h = window.innerHeight;
+                if (h > 0) {
+                    document.documentElement.style.height = h + 'px';
+                    document.documentElement.style.minHeight = h + 'px';
+                    document.body.style.height = h + 'px';
+                    document.body.style.minHeight = h + 'px';
+                }
+            }
+            applyFix();
+            window.addEventListener('resize', applyFix);
+        })();
+        """.trimIndent(),
+        null
+    )
+}
+
+/**
+ * Injects CSS overrides to hide the web dashboard's own mobile bottom navigation,
+ * since the Android app provides a native NavigationBar. Also reclaims the
+ * padding that the web layout reserves for the now-hidden mobile nav.
+ */
+private fun injectWebViewCss(view: WebView?) {
+    view?.evaluateJavascript(
+        """
+        (function() {
+            var style = document.createElement('style');
+            style.textContent = [
+                '.mobile-nav { display: none !important; }',
+                '.mobile-bottom-nav { display: none !important; }',
+                '.app-main { padding-bottom: var(--space-4) !important; }'
+            ].join(' ');
+            document.head.appendChild(style);
+            console.log('[webViewCss] hid web mobile nav, reset app-main padding');
+        })();
+        """.trimIndent(),
+        null
+    )
 }
 
 private val String.jsLiteral: String

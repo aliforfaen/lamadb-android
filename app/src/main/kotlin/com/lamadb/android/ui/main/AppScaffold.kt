@@ -15,11 +15,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import com.lamadb.android.data.wiki.WikiPageEntity
 import com.lamadb.android.theme.ThemeMode
 import com.lamadb.android.ui.dashboard.DashboardScreen
 import com.lamadb.android.ui.health.HealthDataScreen
 import com.lamadb.android.ui.settings.SettingsScreen
 import com.lamadb.android.ui.tasks.ScheduledTasksScreen
+import com.lamadb.android.ui.wiki.WikiPageScreen
+import com.lamadb.android.ui.wiki.WikiScreen
 
 @Composable
 fun AppScaffold(
@@ -36,6 +39,15 @@ fun AppScaffold(
     modifier: Modifier = Modifier
 ) {
     var selected by rememberSaveable { mutableStateOf(AppDestination.Dashboard) }
+    var selectedWikiPage by rememberSaveable { mutableStateOf<String?>(null) }
+
+    selectedWikiPage?.let { path ->
+        WikiPageScreen(
+            path = path,
+            onBack = { selectedWikiPage = null }
+        )
+        return
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -59,6 +71,10 @@ fun AppScaffold(
                     apiKey = apiKey,
                     themeMode = themeMode,
                     onOpenQrScanner = onOpenQrScanner
+                )
+
+                AppDestination.Wiki -> WikiScreen(
+                    onPageClick = { page -> selectedWikiPage = page.path }
                 )
 
                 AppDestination.Tasks -> ScheduledTasksScreen()

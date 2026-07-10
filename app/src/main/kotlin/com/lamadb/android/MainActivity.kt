@@ -16,7 +16,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lamadb.android.data.auth.AuthRepository
 import com.lamadb.android.data.auth.SecureTokenStore
+import com.lamadb.android.data.push.NtfyPushWorker
+import com.lamadb.android.data.wiki.WikiSyncWorker
 import com.lamadb.android.logging.AppLogger
+import com.lamadb.android.widget.EventWidgetRefreshWorker
 import com.lamadb.android.onboarding.OnboardingPreferences
 import com.lamadb.android.presence.PresencePreferences
 import com.lamadb.android.presence.PresenceService
@@ -143,7 +146,7 @@ private fun AuthenticatedContent(
         PresenceSetupDialog(
             onDismiss = {
                 showPresenceSetup = false
-                PresenceService.start(context)
+                // User skipped setup; do not start the presence service.
             },
             onComplete = {
                 showPresenceSetup = false
@@ -152,6 +155,12 @@ private fun AuthenticatedContent(
         )
         return
     }
+
+    // Ensure background workers are scheduled whenever the authenticated
+    // UI is shown. Each worker checks its own preferences internally.
+    NtfyPushWorker.syncSchedule(context)
+    EventWidgetRefreshWorker.schedule(context)
+    WikiSyncWorker.schedule(context)
 
     AppScaffold(
         serverUrl = credentials?.serverUrl ?: "",

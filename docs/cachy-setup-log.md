@@ -385,3 +385,130 @@ The WebView in Compose uses `AndroidView(factory = { webViewRef }, modifier = Mo
 - Huginn — was assigned Multica tasks around backend deployment and repo cleanup (per earlier conversation).
 - Muninn — knows the LXC setup; ask if SSH/connection details change.
 
+
+---
+
+## 2026-07-09 — Dashboard blank-page fix + polish (DeepSeek session)
+
+### Issues resolved
+
+- **LAMA-94 — Dashboard blank after login:** Root cause was Android WebView computing CSS `height: 100%` / `100vh` as 0px because the initial containing block hasn't received final layout dimensions within the Compose `AndroidView`. Fixed by injecting `injectViewportFix()` — JS that sets explicit pixel-based `height` + `minHeight` on `<html>` and `<body>` via `window.innerHeight`, with a `resize` listener for rotation. Verified on emulator: Dashboard and Tasks tabs render correctly.
+
+- **PresenceService crash on Skip WiFi:** `MainActivity.onDismiss` called `PresenceService.start(context)` even when the user skipped WiFi setup. On Android 14+, `startForeground()` with `foregroundServiceType="location"` throws `SecurityException` without location permission. Fixed by removing the service start from `onDismiss` (skip means don't run), removing the duplicate `PresenceService.start()` from `PresenceSetupDialog` (let `onComplete` be the single caller), and adding a permission guard in `PresenceService.onStartCommand()` that calls `stopSelf()` instead of crashing.
+
+- **LAMA-91 — Hide website navigation in Android app:** The web dashboard's `.mobile-nav` activates at `@media (max-width: 768px)`, and at 412px phone width it always shows, creating a double-nav with the native `NavigationBar`. Fixed by injecting `injectWebViewCss()` — a `<style>` element that hides `.mobile-nav` / `.mobile-bottom-nav` and reclaims the reserved `.app-main` padding. Verified: only native nav visible.
+
+### Files changed
+
+- `DashboardScreen.kt` — +56 lines (viewportFix, webViewCss, injection calls)
+- `MainActivity.kt` — removed `PresenceService.start(context)` from `onDismiss`
+- `PresenceSetupDialog.kt` — removed duplicate `PresenceService.start()`, unused import
+- `PresenceService.kt` — added permission guard in `onStartCommand()`
+
+### Remaining for usability
+
+- Pull-to-refresh sensitivity: assessed as not a real issue — Material default threshold (~80-100dp) requires deliberate gesture, Ali's screen taps during ADB debugging won't trigger it. Left untouched.
+- LAMA-89: Backend `android-dashboard-hooks` branch needs LXC deploy (Huginn)
+- LAMA-67: Dashboard JS bridge hooks verification (Android Tester)
+- LAMA-82: In-app log viewer (Android Tester)
+
+### Build verified
+
+- `./gradlew build` — passes
+- `./gradlew test` — all tests pass
+- `./gradlew assembleDebug` — produces APK
+- Installed and smoke-tested on emulator `lamadb-test`
+
+
+---
+
+## 2026-07-10 — LAMA-53, LAMA-54, LAMA-71 implementation
+
+Implemented push notifications, home-screen widget, and on-device wiki cache.
+
+### LAMA-53 — Push notification support (ntfy)
+
+- Added `data.push` package:
+  - `NtfyMessage`, `NtfyApiClient` (polls ntfy topic NDJSON)
+  - `PushPreferences` (enable toggle, server URL, topic, last-seen timestamp)
+  - `PushNotificationHelper` (creates 4 notification channels by priority)
+  - `NtfyPushWorker` (CoroutineWorker, polls every 15 min when enabled)
+  - `BootReceiver` (re-schedules worker on reboot)
+- Added settings UI (`PushSettingsCard`) with enable toggle, URL/topic fields, and test notification button.
+- `MainActivity` schedules the worker in authenticated state.
+- New permission in manifest: `RECEIVE_BOOT_COMPLETED`.
+- No Google/FCM dependency; uses self-hosted ntfy.
+
+### LAMA-54 — Home screen ticker widget
+
+- Added `widget` package:
+  - `EventWidgetProvider` (AppWidgetProvider)
+  - `EventWidgetService` + `EventWidgetRemoteViewsFactory` (loads latest 3 events)
+  - `EventWidgetRefreshWorker` (periodic refresh every 30 min)
+- Added widget layouts (`widget_event_list.xml`, `widget_event_item.xml`, `widget_event_empty.xml`) and `res/xml/event_widget_info.xml`.
+- Tapping header refreshes; tapping an event opens `MainActivity`.
+- Handles missing auth gracefully with "Sign in to view events" empty state.
+- `LamaDBApiClient.getEvents(limit=3)` added for widget data.
+
+### LAMA-71 — On-device llm-wiki cache + sync
+
+- Added `data.wiki` package:
+  - `WikiPageEntity`, `WikiDao`
+  - `WikiRepository` (syncs index, caches full page content on view)
+  - `WikiSyncWorker` (periodic sync every 6 hours)
+- Added UI:
+  - `WikiScreen` — bottom-nav destination, lists cached pages grouped by section, manual sync button
+  - `WikiPageScreen` — shows cached content, fetches fresh content on open/refresh
+- Added `Wiki` destination to `AppDestination`/`AppScaffold`.
+- Bumped `EventDatabase` to version 2 with a migration adding the `wiki_pages` table.
+- `LamaDBApiClient.getWikiPages()` and `getWikiPage(path)` added.
+
+### Tests added
+
+- `NtfyApiClientTest` — NDJSON parsing, error handling
+- `PushPreferencesTest` — defaults and persistence
+- `WikiRepositoryTest` (Robolectric + in-memory Room) — sync, content preservation, page fetch
+- Extended `LamaDBApiClientTest` — `getEvents` and `getWikiPages`
+
+### Build verified
+
+- `./gradlew build` — passes
+- `./gradlew test` — all tests pass
+- `./gradlew lint` — passes
+- Multica issues LAMA-53, LAMA-54, LAMA-71 moved to `done` with comments.
+
+
+---
+
+## 2026-07-10 — Smoke test + BatteryOptimizationHelper crash fix
+
+### Smoke-test results on `lamadb-test` emulator
+
+- App installs and launches; debug login works; dashboard renders correctly.
+- **LAMA-53 (push):** toggle enables, `NtfyPushWorker` schedules and polls (0 new messages), test notification displays.
+- **LAMA-54 (widget):** widget provider is listed in the launcher widget picker as "LamaDB 3×2"; `EventWidgetRefreshWorker` runs successfully. Manual drag-to-home placement could not be completed via ADB alone.
+- **LAMA-71 (wiki):** Wiki tab lists 129 cached pages by section; page content opens; `WikiSyncWorker` completes.
+
+### Bug found and fixed
+
+Tapping **Keep presence running → Open settings** in Settings crashed the app with:
+```
+android.content.ActivityNotFoundException: No Activity found to handle Intent
+{ act=android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS dat=package:... }
+```
+
+Root cause: `BatteryOptimizationHelper.batteryOptimizationSettingsIntent()` attached a `package:` data URI to `ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS`, which the emulator/OEM settings app rejected.
+
+Fix:
+- Removed the package URI from the main intent.
+- Added a fallback to `Settings.ACTION_APPLICATION_DETAILS_SETTINGS` if the primary intent cannot be resolved.
+- Updated `BatteryOptimizationHelperTest` to assert `intent.data == null`.
+
+Files changed:
+- `app/src/main/kotlin/com/lamadb/android/power/BatteryOptimizationHelper.kt`
+- `app/src/test/kotlin/com/lamadb/android/power/BatteryOptimizationHelperTest.kt`
+
+### Build verified
+
+- `./gradlew test` — all tests pass
+- `./gradlew lint` — passes

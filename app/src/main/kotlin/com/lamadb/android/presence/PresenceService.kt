@@ -72,6 +72,11 @@ class PresenceService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (!hasLocationPermission()) {
+            AppLogger.w(TAG, "Location permission missing; cannot start presence foreground service")
+            stopSelf()
+            return START_NOT_STICKY
+        }
         AppLogger.i(TAG, "Presence service started")
         startForeground(NOTIFICATION_ID, buildNotification(stateMachine.currentState()))
         scheduleDrainWorker()

@@ -34,7 +34,6 @@ import com.lamadb.android.R
 import com.lamadb.android.power.BatteryOptimizationHelper
 import com.lamadb.android.power.BatteryOptimizationPreferences
 import com.lamadb.android.presence.PresencePreferences
-import com.lamadb.android.presence.PresenceService
 import com.lamadb.android.ui.power.BatteryOptimizationCard
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -109,7 +108,6 @@ fun PresenceSetupDialog(
                         if (homeSsid.isBlank()) return@Button
                         preferences.homeSsid = homeSsid
                         if (permissionState.allPermissionsGranted) {
-                            PresenceService.start(context)
                             if (shouldShowBatteryGuidance) {
                                 mainDialogVisible = false
                                 showBatteryGuidance = true

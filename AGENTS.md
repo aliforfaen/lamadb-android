@@ -170,6 +170,7 @@ Coordinate with the backend agent or Ali if you implement these.
 
 - **2026-07-05:** Android toolchain installed on `cachy`. JDK 17, SDK, emulator, and AVD `lamadb-test` verified. Environment variables in `~/.zshrc`. LAMA-57 is `in_progress`.
 - `./gradlew build` verified working on `cachy`.
-- **Next issue:** LAMA-59 — implement WebView dashboard with pull-to-refresh.
+- **Next issue:** LAMA-59 — implement WebView dashboard with pull-to-refresh (already implemented; pick next open issue from Multica board).
+- **2026-07-10:** LAMA-53 (ntfy push notifications), LAMA-54 (home-screen ticker widget), and LAMA-71 (on-device wiki cache + sync) implemented and moved to `done` in Multica.
 - **Open question:** best way for Ali to see the emulator on the desktop (UI window vs remote framebuffer).
 
