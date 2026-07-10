@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -28,21 +30,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.lamadb.android.BuildConfig
 import com.lamadb.android.R
+import com.lamadb.android.data.push.NtfyPushWorker
+import com.lamadb.android.data.wiki.WikiSyncWorker
+import com.lamadb.android.debug.TestDataSeeder
 import com.lamadb.android.logging.AppLogger
 import com.lamadb.android.logging.LogPreferences
+import com.lamadb.android.onboarding.OnboardingPreferences
 import com.lamadb.android.power.BatteryOptimizationHelper
 import com.lamadb.android.power.BatteryOptimizationPreferences
 import com.lamadb.android.theme.ThemeMode
 import com.lamadb.android.theme.ThemePreferences
 import com.lamadb.android.ui.power.BatteryOptimizationCard
+import com.lamadb.android.widget.EventWidgetRefreshWorker
+import kotlinx.coroutines.launch
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -53,11 +64,13 @@ fun SettingsScreen(
     onResetPresence: () -> Unit,
     onViewLogs: () -> Unit = {},
     onReplayOnboarding: () -> Unit = {},
+    onResetToFirstLaunch: () -> Unit = {},
     onDynamicColorChanged: (Boolean) -> Unit = {},
     onThemeModeChanged: (ThemeMode) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val themePreferences = remember { ThemePreferences(context) }
     val batteryPreferences = remember { BatteryOptimizationPreferences(context) }
     val batteryHelper = remember { BatteryOptimizationHelper(context) }
@@ -77,7 +90,8 @@ fun SettingsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
@@ -267,6 +281,20 @@ fun SettingsScreen(
             }
         }
 
+        if (BuildConfig.DEBUG) {
+            DebugSettingsCard(
+                onSkipOnboarding = {
+                    OnboardingPreferences(context).onboardingCompleted = true
+                },
+                onSeedData = {
+                    scope.launch { TestDataSeeder.seedAll(context) }
+                },
+                onResetToFirstLaunch = onResetToFirstLaunch,
+                onCrashApp = { throw RuntimeException("Debug crash triggered from settings") },
+                onTriggerWorkers = { triggerDebugWorkers(context) }
+            )
+        }
+
         Spacer(modifier = Modifier.weight(1f))
 
         HorizontalDivider()
@@ -277,6 +305,79 @@ fun SettingsScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
+}
+
+@Composable
+private fun DebugSettingsCard(
+    onSkipOnboarding: () -> Unit,
+    onSeedData: () -> Unit,
+    onResetToFirstLaunch: () -> Unit,
+    onCrashApp: () -> Unit,
+    onTriggerWorkers: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.debug_tools_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.error
+            )
+
+            OutlinedButton(
+                onClick = onSkipOnboarding,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.debug_skip_onboarding))
+            }
+
+            OutlinedButton(
+                onClick = onSeedData,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.debug_seed_data))
+            }
+
+            OutlinedButton(
+                onClick = onResetToFirstLaunch,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.debug_reset_first_launch))
+            }
+
+            OutlinedButton(
+                onClick = onTriggerWorkers,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.debug_trigger_workers))
+            }
+
+            Button(
+                onClick = onCrashApp,
+                modifier = Modifier.fillMaxWidth(),
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text(stringResource(R.string.debug_crash_app))
+            }
+        }
+    }
+}
+
+private fun triggerDebugWorkers(context: android.content.Context) {
+    val workManager = WorkManager.getInstance(context)
+    workManager.enqueue(OneTimeWorkRequestBuilder<WikiSyncWorker>().build())
+    workManager.enqueue(OneTimeWorkRequestBuilder<EventWidgetRefreshWorker>().build())
+    workManager.enqueue(OneTimeWorkRequestBuilder<NtfyPushWorker>().build())
 }
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)

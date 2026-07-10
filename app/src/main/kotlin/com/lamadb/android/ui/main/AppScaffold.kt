@@ -29,16 +29,18 @@ fun AppScaffold(
     serverUrl: String,
     apiKey: String,
     themeMode: ThemeMode,
+    initialDestination: AppDestination? = null,
     onOpenQrScanner: () -> Unit,
     onLogout: () -> Unit,
     onResetPresence: () -> Unit,
     onViewLogs: () -> Unit = {},
     onReplayOnboarding: () -> Unit = {},
+    onResetToFirstLaunch: () -> Unit = {},
     onDynamicColorChanged: (Boolean) -> Unit = {},
     onThemeModeChanged: (ThemeMode) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var selected by rememberSaveable { mutableStateOf(AppDestination.Dashboard) }
+    var selected by rememberSaveable { mutableStateOf(initialDestination ?: AppDestination.Dashboard) }
     var selectedWikiPage by rememberSaveable { mutableStateOf<String?>(null) }
 
     selectedWikiPage?.let { path ->
@@ -86,6 +88,7 @@ fun AppScaffold(
                     onResetPresence = onResetPresence,
                     onViewLogs = onViewLogs,
                     onReplayOnboarding = onReplayOnboarding,
+                    onResetToFirstLaunch = onResetToFirstLaunch,
                     onDynamicColorChanged = onDynamicColorChanged,
                     onThemeModeChanged = onThemeModeChanged
                 )

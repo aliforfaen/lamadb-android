@@ -80,6 +80,14 @@
     <string name="settings_logout">Log out</string>
     <string name="settings_version">Version %1$s</string>
 
+    <!-- Debug tools (debug builds only) -->
+    <string name="debug_tools_title">Debug tools</string>
+    <string name="debug_skip_onboarding">Skip onboarding on next launch</string>
+    <string name="debug_seed_data">Seed fake events / wiki pages</string>
+    <string name="debug_reset_first_launch">Reset to first-launch state</string>
+    <string name="debug_crash_app">Crash app</string>
+    <string name="debug_trigger_workers">Trigger workers now</string>
+
     <!-- Push notifications -->
     <string name="push_settings_title">Push notifications</string>
     <string name="push_settings_body">Poll the LamaDB ntfy topic for critical alerts.</string>

@@ -195,6 +195,8 @@ You can leave this open in a `tmux` or `screen` session.
 
 ## Testing without Android Studio
 
+See [`docs/testing.md`](testing.md) for the agent smoke-test harness (ADB launch flags, seed data, and the debug menu).
+
 | Test type | Command | Needs device? |
 |---|---|---|
 | Compile | `./gradlew build` | No |
