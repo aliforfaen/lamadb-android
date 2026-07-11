@@ -73,6 +73,10 @@ class LamaDBApiClient(
         }.body()
     }
 
+    suspend fun getDashboardHeader(): Result<DashboardHeaderResponse> = apiCall {
+        client.get("/api/dashboard/header").body()
+    }
+
     private suspend inline fun <T> apiCall(block: () -> T): Result<T> = try {
         Result.success(block())
     } catch (e: ClientRequestException) {

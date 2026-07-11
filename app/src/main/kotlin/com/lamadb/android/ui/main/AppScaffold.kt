@@ -1,6 +1,7 @@
 package com.lamadb.android.ui.main
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +28,7 @@ import com.lamadb.android.network.ConnectivityObserver
 import com.lamadb.android.network.ConnectionState
 import com.lamadb.android.theme.ThemeMode
 import com.lamadb.android.ui.dashboard.DashboardScreen
+import com.lamadb.android.ui.dashboard.DashboardTicker
 import com.lamadb.android.ui.settings.SettingsScreen
 import com.lamadb.android.ui.wiki.WikiPageScreen
 import com.lamadb.android.ui.wiki.WikiScreen
@@ -73,7 +75,13 @@ fun AppScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             if (selected == AppDestination.Dashboard) {
-                ConnectionStatusBar(state = connectionState)
+                Column {
+                    ConnectionStatusBar(state = connectionState)
+                    DashboardTicker(
+                        serverUrl = serverUrl,
+                        apiKey = apiKey
+                    )
+                }
             } else {
                 Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
             }
