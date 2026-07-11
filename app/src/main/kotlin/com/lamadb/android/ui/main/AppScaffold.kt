@@ -1,22 +1,30 @@
 package com.lamadb.android.ui.main
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.lamadb.android.data.wiki.WikiPageEntity
+import com.lamadb.android.network.ConnectivityObserver
+import com.lamadb.android.network.ConnectionState
 import com.lamadb.android.theme.ThemeMode
 import com.lamadb.android.ui.dashboard.DashboardScreen
 import com.lamadb.android.ui.settings.SettingsScreen
@@ -41,8 +49,17 @@ fun AppScaffold(
     onDebugOverlayChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var selected by rememberSaveable { mutableStateOf(initialDestination ?: AppDestination.Dashboard) }
     var selectedWikiPage by rememberSaveable { mutableStateOf<String?>(null) }
+    var connectionState by remember { mutableStateOf<ConnectionState>(ConnectionState.Available) }
+
+    val connectivityObserver = remember { ConnectivityObserver(context) }
+    LaunchedEffect(connectivityObserver) {
+        connectivityObserver.observe().collect { state ->
+            connectionState = state
+        }
+    }
 
     selectedWikiPage?.let { path ->
         WikiPageScreen(
@@ -54,6 +71,13 @@ fun AppScaffold(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        topBar = {
+            if (selected == AppDestination.Dashboard) {
+                ConnectionStatusBar(state = connectionState)
+            } else {
+                Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+            }
+        },
         bottomBar = {
             NavigationBar {
                 AppDestination.entries.forEach { destination ->

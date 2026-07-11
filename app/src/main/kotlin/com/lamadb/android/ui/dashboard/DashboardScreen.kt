@@ -16,14 +16,11 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.activity.compose.BackHandler
@@ -44,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -60,7 +56,6 @@ import com.lamadb.android.network.ConnectivityObserver
 import com.lamadb.android.network.ConnectionState
 import com.lamadb.android.presence.PresencePreferences
 import com.lamadb.android.theme.ThemeMode
-import com.lamadb.android.ui.main.ConnectionStatusBar
 
 private const val TAG = "LamaDB"
 private const val JS_BRIDGE_NAME = "LamaDBAndroid"
@@ -91,10 +86,6 @@ fun DashboardScreen(
     var webView: WebView? by remember { mutableStateOf(null) }
     var mainFrameError by remember { mutableStateOf<String?>(null) }
     var canGoBack by remember { mutableStateOf(false) }
-
-    val density = LocalDensity.current
-    val statusBarHeightDp = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val statusBarHeightPx = with(density) { statusBarHeightDp.roundToPx() }
 
     val connectivityObserver = remember { ConnectivityObserver(context) }
     LaunchedEffect(connectivityObserver) {
@@ -151,7 +142,7 @@ fun DashboardScreen(
                         loadState = DashboardLoadState.Error(error)
                     } else {
                         injectViewportFix(view)
-                        injectWebViewCss(view, showDebugOverlay, statusBarHeightPx)
+                        injectWebViewCss(view, showDebugOverlay)
                         canGoBack = view?.canGoBack() ?: false
 
 
@@ -220,13 +211,6 @@ fun DashboardScreen(
         }
     }
 
-    // Re-apply layout overrides if the status-bar height changes (rotation, split-screen).
-    LaunchedEffect(statusBarHeightPx) {
-        if (loadState is DashboardLoadState.Success) {
-            injectWebViewCss(webView, showDebugOverlay, statusBarHeightPx)
-        }
-    }
-
     // Pause/resume JavaScript when the dashboard screen goes to the background so the
     // WebView does not keep doing work while the user is on another tab.
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -278,11 +262,6 @@ fun DashboardScreen(
                     .align(Alignment.TopCenter)
             )
         }
-
-        ConnectionStatusBar(
-            state = connectionState,
-            modifier = Modifier.align(Alignment.TopEnd)
-        )
 
         if (loadState is DashboardLoadState.Error) {
             ErrorOverlay(
@@ -433,17 +412,12 @@ private fun injectViewportFix(view: WebView?) {
  * since the Android app provides a native NavigationBar. Also reclaims the
  * padding that the web layout reserves for the now-hidden mobile nav.
  *
- * The dashboard is rendered edge-to-edge, so [statusBarHeightPx] is used to push
- * the web header down so it is not hidden behind the system status bar / the
- * native connection indicator.
- *
  * When [showDebugOverlay] is false, the dashboard's debug overlay (red bar with
  * state metadata) is hidden.
  */
 private fun injectWebViewCss(
     view: WebView?,
-    showDebugOverlay: Boolean,
-    statusBarHeightPx: Int = 0
+    showDebugOverlay: Boolean
 ) {
     val hideDebugOverlayCss = if (showDebugOverlay) {
         ""
@@ -463,12 +437,10 @@ private fun injectWebViewCss(
                 '.mobile-nav { display: none !important; }',
                 '.mobile-bottom-nav { display: none !important; }',
                 '.app-main { padding-bottom: var(--space-4) !important; }',
-                'body { padding-top: ${statusBarHeightPx}px !important; }',
-                '.app-header { top: ${statusBarHeightPx}px !important; }',
                 ${hideDebugOverlayCss.jsLiteral}
             ].join(' ');
             document.head.appendChild(style);
-            console.log('[webViewCss] hid web mobile nav, reset app-main padding, debugOverlay=$showDebugOverlay, statusBarHeight=${statusBarHeightPx}');
+            console.log('[webViewCss] hid web mobile nav, reset app-main padding, debugOverlay=$showDebugOverlay');
         })();
         """.trimIndent(),
         null
