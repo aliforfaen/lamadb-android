@@ -170,6 +170,8 @@ Coordinate with the backend agent or Ali if you implement these.
 
 - **2026-07-05:** Android toolchain installed on `cachy`. JDK 17, SDK, emulator, and AVD `lamadb-test` verified. Environment variables in `~/.zshrc`. LAMA-57 is `in_progress`.
 - `./gradlew build` verified working on `cachy`.
-- **Next issue:** LAMA-59 — implement WebView dashboard with pull-to-refresh.
+- **Next issue:** LAMA-59 — implement WebView dashboard with pull-to-refresh (already implemented; pick next open issue from Multica board).
+- **2026-07-10:** LAMA-53 (ntfy push notifications), LAMA-54 (home-screen ticker widget), and LAMA-71 (on-device wiki cache + sync) implemented and moved to `done` in Multica.
 - **Open question:** best way for Ali to see the emulator on the desktop (UI window vs remote framebuffer).
+- **2026-07-11:** LAMA-97 (UX polish & quality-of-life) completed — all 4 tiers, 25 items. Splash screen API, biometric lock, launcher shortcuts, pull-to-refresh Wiki/Tasks, theme transitions, R8 minification, testTags, state-injection intents, emulator scripts, dogfood scenario catalog. MainActivity base class changed to FragmentActivity for BiometricPrompt. Build: 58 tests pass, debug + release (R8) pass.
 

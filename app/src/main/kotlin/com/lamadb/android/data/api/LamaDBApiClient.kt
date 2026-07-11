@@ -51,6 +51,28 @@ class LamaDBApiClient(
         client.post("/api/android/provision") { setBody(request) }.body()
     }
 
+    suspend fun postEvent(event: EventRequest): Result<Unit> = apiCall {
+        client.post("/api/events") { setBody(event) }.body()
+    }
+
+    suspend fun getEvents(limit: Int = 3): Result<List<EventResponse>> = apiCall {
+        client.get("/api/events") {
+            url { parameters.append("limit", limit.toString()) }
+        }.body()
+    }
+
+    suspend fun getWikiPages(limit: Int = 500): Result<List<WikiPageResponse>> = apiCall {
+        client.get("/api/wiki/pages") {
+            url { parameters.append("limit", limit.toString()) }
+        }.body()
+    }
+
+    suspend fun getWikiPage(path: String): Result<WikiPageDetailResponse> = apiCall {
+        client.get("/api/wiki/page/${path.trimStart('/')}") {
+            url { parameters.append("source", "db") }
+        }.body()
+    }
+
     private suspend inline fun <T> apiCall(block: () -> T): Result<T> = try {
         Result.success(block())
     } catch (e: ClientRequestException) {

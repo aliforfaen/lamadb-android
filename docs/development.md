@@ -195,6 +195,8 @@ You can leave this open in a `tmux` or `screen` session.
 
 ## Testing without Android Studio
 
+See [`docs/testing.md`](testing.md) for the agent smoke-test harness (ADB launch flags, seed data, and the debug menu).
+
 | Test type | Command | Needs device? |
 |---|---|---|
 | Compile | `./gradlew build` | No |
@@ -305,6 +307,157 @@ org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
 org.gradle.caching=true
 org.gradle.parallel=true
 ```
+
+---
+
+## Backend deployment (LamaDB LXC)
+
+The dashboard is served by the LamaDB backend running in an LXC container (`lamadb`) on Tailscale. The Android client loads it at `https://lamadb.tail91ec23.ts.net`.
+
+### Connecting to the LXC
+
+```bash
+ssh -i ~/.ssh/messhias-master messhias@lamadb
+# or
+ssh -i ~/.ssh/messhias-master root@lamadb
+```
+
+Use the `messhias` user for normal work. Avoid running commands as `root` unless necessary.
+
+### Backend layout
+
+- Code lives at `/home/messhias/projects/lamadb`.
+- The API runs as a Docker container named `lamadb_api`.
+- PostgreSQL runs as `lamadb_postgres`.
+- Static dashboard assets are copied into the Docker image at build time.
+
+### Updating the backend after a dashboard JS fix
+
+1. SSH into the LXC and pull the branch:
+
+   ```bash
+   ssh -i ~/.ssh/messhias-master messhias@lamadb
+   cd projects/lamadb
+   git pull github android-dashboard-hooks
+   ```
+
+   > Note: the local `origin` remote points to a non-existent local path; use the `github` remote.
+
+2. Copy the updated static files into the running API container:
+
+   ```bash
+   docker cp static/js/app.js lamadb_api:/app/static/js/app.js
+   docker cp static/js/pages/home.js lamadb_api:/app/static/js/pages/home.js
+   # copy any other changed static assets
+   ```
+
+3. Verify the deployed files:
+
+   ```bash
+   curl -s https://lamadb.tail91ec23.ts.net/js/app.js | head -5
+   ```
+
+If you need to restart the API container instead:
+
+```bash
+docker restart lamadb_api
+```
+
+To fully rebuild the image (slower, required if Python dependencies or Dockerfile change):
+
+```bash
+cd projects/lamadb
+docker compose up -d --build api
+```
+
+---
+
+## On-device testing workflow
+
+### Test credentials
+
+A test admin API key is stored in `.env.test` (gitignored, never commit it):
+
+```bash
+source .env.test
+```
+
+Use these values in the Android login screen:
+
+- URL: `https://lamadb.tail91ec23.ts.net`
+- API key: value of `LAMADB_TEST_API_KEY`
+
+The key is rotated regularly; update `.env.test` when Ali provides a new one.
+
+### Physical device (preferred)
+
+1. Ensure the phone is on Tailscale and ADB over WiFi is enabled.
+2. Connect from `cachy`:
+
+   ```bash
+   adb connect PHONE_IP:PORT
+   adb devices
+   ```
+
+3. Build, install, and launch:
+
+   ```bash
+   ./gradlew assembleDebug
+   adb install -r app/build/outputs/apk/debug/app-debug.apk
+   adb shell am start -n com.lamadb.android/.MainActivity
+   ```
+
+4. Watch dashboard JS logs:
+
+   ```bash
+   adb logcat -s LamaDB:D
+   ```
+
+### Emulator (limited)
+
+The emulator on `cachy` can run the app for UI smoke tests, but it usually cannot reach the Tailnet backend URL. Use it for:
+
+- Verifying the app builds and launches.
+- Checking onboarding / login screen rendering.
+- Running instrumented tests that do not require the backend.
+
+```bash
+# Start the existing AVD
+emulator -avd lamadb-test -no-window -no-audio -gpu swiftshader_indirect -no-snapshot-save
+
+# In another shell
+adb -s emulator-5554 install -r app/build/outputs/apk/debug/app-debug.apk
+adb -s emulator-5554 shell am start -n com.lamadb.android/.MainActivity
+```
+
+### Capturing state from the device
+
+```bash
+# Screenshot
+adb shell screencap -p /sdcard/screen.png
+adb pull /sdcard/screen.png /tmp/screen.png
+
+# App logs
+adb logcat --pid=$(adb shell pidof -s com.lamadb.android)
+
+# Clear app data (forces re-login)
+adb shell pm clear com.lamadb.android
+```
+
+---
+
+## WebView debugging
+
+The debug APK enables WebView DevTools. While the app is running:
+
+```bash
+adb shell cat /proc/net/unix | grep webview_devtools_remote
+# Forward the socket (replace PID)
+adb forward tcp:9222 localabstract:webview_devtools_remote_<PID>
+curl http://localhost:9222/json/list
+```
+
+JS console messages are also forwarded to logcat via the `DashboardJS` tag.
 
 ---
 

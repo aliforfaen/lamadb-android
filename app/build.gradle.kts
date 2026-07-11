@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.24"
+    id("org.jetbrains.kotlin.kapt")
 }
 
 android {
@@ -23,11 +24,34 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "LAMADB_TEST_URL", "\"\"")
+            buildConfigField("String", "LAMADB_TEST_API_KEY", "\"\"")
+        }
+        debug {
+            val env = rootProject.file(".env.test")
+            var testUrl = ""
+            var testKey = ""
+            if (env.exists()) {
+                env.readLines().forEach { line ->
+                    val trimmed = line.trim()
+                    if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
+                        val parts = trimmed.split("=", limit = 2)
+                        if (parts.size == 2) {
+                            when (parts[0].trim()) {
+                                "LAMADB_TEST_URL" -> testUrl = parts[1].trim()
+                                "LAMADB_TEST_API_KEY" -> testKey = parts[1].trim()
+                            }
+                        }
+                    }
+                }
+            }
+            buildConfigField("String", "LAMADB_TEST_URL", "\"$testUrl\"")
+            buildConfigField("String", "LAMADB_TEST_API_KEY", "\"$testKey\"")
         }
     }
     compileOptions {
@@ -39,6 +63,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
@@ -62,7 +87,11 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.appcompat:appcompat:1.7.0")
 
+    // Splash screen
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
     // Security
+    implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
     // HTTP
@@ -78,10 +107,22 @@ dependencies {
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
 
+    // WebView + pull-to-refresh + icons
+    implementation("androidx.webkit:webkit:1.11.0")
+    implementation("androidx.compose.material:material")
+    implementation("androidx.compose.material:material-icons-extended:1.6.8")
+
+    // Background work + local queue
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
+
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     testImplementation("io.ktor:ktor-client-mock:2.3.11")
     testImplementation("io.mockk:mockk:1.13.11")
+    testImplementation("org.robolectric:robolectric:4.12.2")
 
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")

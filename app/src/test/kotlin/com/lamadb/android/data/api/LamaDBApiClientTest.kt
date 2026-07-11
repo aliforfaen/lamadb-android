@@ -61,4 +61,49 @@ class LamaDBApiClientTest {
         assertEquals("new-key", result.getOrNull()?.apiKey)
         assertEquals("user-1", result.getOrNull()?.userId)
     }
+
+    @Test
+    fun getEvents_requestsLimitAndParsesList() = runTest {
+        val mockEngine = MockEngine { request ->
+            assertEquals("/api/events", request.url.encodedPath)
+            assertEquals("3", request.url.parameters["limit"])
+            respond(
+                content = """[
+                    {"id":1,"ts":"2026-07-10T12:00:00Z","source":"uptime","type":"alert","severity":"critical","title":"Server down"},
+                    {"id":2,"ts":"2026-07-10T11:00:00Z","source":"wiki","type":"page_created","severity":"info","title":"New page"}
+                ]""".trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = LamaDBApiClient("https://lamadb.test", "test-key", mockEngine)
+        val result = client.getEvents(limit = 3)
+
+        assertTrue(result.isSuccess)
+        assertEquals(2, result.getOrNull()?.size)
+        assertEquals("Server down", result.getOrNull()?.get(0)?.title)
+    }
+
+    @Test
+    fun getWikiPages_requestsLimitAndParsesList() = runTest {
+        val mockEngine = MockEngine { request ->
+            assertEquals("/api/wiki/pages", request.url.encodedPath)
+            respond(
+                content = """[
+                    {"path":"entities/homelab.md","title":"Homelab","section":"entities","size":1200},
+                    {"path":"concepts/life-os.md","title":"Life OS","section":"concepts","size":800}
+                ]""".trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = LamaDBApiClient("https://lamadb.test", "test-key", mockEngine)
+        val result = client.getWikiPages(limit = 500)
+
+        assertTrue(result.isSuccess)
+        assertEquals(2, result.getOrNull()?.size)
+        assertEquals("Homelab", result.getOrNull()?.get(0)?.title)
+    }
 }

@@ -41,6 +41,7 @@ When you need backend changes, open a task or ask the human. When you hit enviro
 Read first:
 - `docs/spec.md` — what to build
 - `docs/development.md` — how to build and deploy
+- `docs/testing.md` — debug launch flags, smoke-test script, and ADB cheat-sheet
 - `README.md` — project overview
 - `~/LamaFiles/projects/lamadb/AGENTS.md` — backend architecture if you touch the API
 
@@ -83,6 +84,7 @@ Your responsibilities:
 
 Read first:
 - `docs/development.md` — build and ADB commands
+- `docs/testing.md` — debug launch flags and smoke-test script
 - `docs/spec.md` — acceptance criteria
 - `README.md` — project overview
 
@@ -104,6 +106,28 @@ Be concise in reports. Include command output, not summaries, when it matters.
 5. Tester runs build, emulator tests, and reports back.
 6. If bugs are found, reassign to Developer with logs/screenshots.
 7. When both agree, you (Ali) do the final review and move the issue to Done.
+
+## Debug entrypoints for agents
+
+When verifying UI work, use the debug backdoors documented in `docs/testing.md` instead of clicking through onboarding and login every time.
+
+Quick reference:
+
+```bash
+# Open Wiki tab after auto-login (requires .env.test with test credentials)
+./scripts/smoke-test.sh wiki
+
+# Open Settings directly (debug menu is visible here)
+./scripts/smoke-test.sh settings
+
+# Seed fixtures so Wiki / Tasks / widget have data
+./scripts/smoke-test.sh seed
+
+# Return to first-launch state
+./scripts/smoke-test.sh clean
+```
+
+These helpers are debug-only and guarded by `BuildConfig.DEBUG`. Release builds ignore the intent extras and never show the Debug tools card.
 
 ## Notes
 
