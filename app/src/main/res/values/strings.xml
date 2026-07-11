@@ -5,8 +5,6 @@
     <!-- Bottom navigation -->
     <string name="nav_dashboard">Dashboard</string>
     <string name="nav_wiki">Wiki</string>
-    <string name="nav_tasks">Tasks</string>
-    <string name="nav_health">Health</string>
     <string name="nav_settings">Settings</string>
 
     <!-- Presence -->

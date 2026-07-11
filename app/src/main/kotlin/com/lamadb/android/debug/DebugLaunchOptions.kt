@@ -49,8 +49,6 @@ private fun String.toAppDestination(): AppDestination? =
     when (lowercase()) {
         "dashboard" -> AppDestination.Dashboard
         "wiki" -> AppDestination.Wiki
-        "tasks" -> AppDestination.Tasks
-        "health" -> AppDestination.Health
         "settings" -> AppDestination.Settings
         else -> null
     }

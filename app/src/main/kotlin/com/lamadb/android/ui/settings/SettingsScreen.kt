@@ -46,20 +46,25 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.lamadb.android.BuildConfig
 import com.lamadb.android.R
+import com.lamadb.android.data.events.EventRepository
 import com.lamadb.android.data.push.NtfyPushWorker
 import com.lamadb.android.data.wiki.WikiSyncWorker
 import com.lamadb.android.debug.DebugPreferences
 import com.lamadb.android.debug.TestDataSeeder
+import com.lamadb.android.ui.health.HealthPreferences
 import com.lamadb.android.logging.AppLogger
 import com.lamadb.android.logging.LogPreferences
 import com.lamadb.android.onboarding.OnboardingPreferences
 import com.lamadb.android.power.BatteryOptimizationHelper
 import com.lamadb.android.power.BatteryOptimizationPreferences
+import com.lamadb.android.presence.PresencePreferences
 import com.lamadb.android.theme.ThemeMode
 import com.lamadb.android.theme.SecurityPreferences
 import com.lamadb.android.theme.ThemePreferences
 import com.lamadb.android.ui.power.BatteryOptimizationCard
 import com.lamadb.android.widget.EventWidgetRefreshWorker
+import java.text.DateFormat
+import java.util.Date
 import kotlinx.coroutines.launch
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.biometric.BiometricManager
@@ -144,6 +149,10 @@ fun SettingsScreen(
         }
 
         PushSettingsCard()
+
+        TasksSettingsCard()
+
+        HealthSettingsCard()
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -491,6 +500,188 @@ private fun DebugSettingsCard(
                 )
             ) {
                 Text(stringResource(R.string.debug_crash_app))
+            }
+        }
+    }
+}
+
+@Composable
+private fun TasksSettingsCard(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val eventRepository = remember { EventRepository.createDefault(context) }
+    val presencePreferences = remember { PresencePreferences(context) }
+
+    var queuedCount by remember { mutableStateOf(0) }
+    var lastDrainResult by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        queuedCount = eventRepository.count()
+    }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.tasks_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = stringResource(R.string.tasks_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            // Presence
+            Column {
+                Text(
+                    text = stringResource(R.string.tasks_presence_title),
+                    style = MaterialTheme.typography.titleSmall
+                )
+                val homeSsid = presencePreferences.homeSsid
+                Text(
+                    text = if (homeSsid.isNullOrBlank()) {
+                        stringResource(R.string.tasks_presence_disabled)
+                    } else {
+                        stringResource(R.string.tasks_presence_home, homeSsid)
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = stringResource(R.string.tasks_presence_device, presencePreferences.deviceId),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            HorizontalDivider()
+
+            // Event queue
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.tasks_queue_title),
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        modifier = Modifier.testTag("settings_tasks_queue_count"),
+                        text = stringResource(R.string.tasks_queue_count, queuedCount),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Button(
+                    onClick = {
+                        scope.launch {
+                            val sent = eventRepository.drain()
+                            queuedCount = eventRepository.count()
+                            lastDrainResult = context.resources.getQuantityString(
+                                R.plurals.tasks_drain_result,
+                                sent,
+                                sent
+                            )
+                        }
+                    },
+                    modifier = Modifier.testTag("settings_tasks_drain_button")
+                ) {
+                    Text(stringResource(R.string.tasks_drain_now))
+                }
+            }
+
+            lastDrainResult?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HealthSettingsCard(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val preferences = remember { HealthPreferences(context) }
+    var syncEnabled by remember { mutableStateOf(preferences.syncEnabled) }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.health_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = stringResource(R.string.health_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.health_sync_toggle),
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        text = stringResource(R.string.health_sync_toggle_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    modifier = Modifier.testTag("settings_health_sync_toggle"),
+                    checked = syncEnabled,
+                    onCheckedChange = {
+                        syncEnabled = it
+                        preferences.syncEnabled = it
+                        if (it) {
+                            preferences.lastSyncTime = System.currentTimeMillis()
+                        }
+                    }
+                )
+            }
+
+            if (syncEnabled) {
+                val lastSync = preferences.lastSyncTime
+                Text(
+                    text = if (lastSync > 0) {
+                        stringResource(
+                            R.string.health_last_sync,
+                            DateFormat.getDateTimeInstance().format(Date(lastSync))
+                        )
+                    } else {
+                        stringResource(R.string.health_never_synced)
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = stringResource(R.string.health_coming_soon),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

@@ -3,7 +3,6 @@ package com.lamadb.android.ui.main
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -20,9 +19,7 @@ import androidx.compose.ui.res.stringResource
 import com.lamadb.android.data.wiki.WikiPageEntity
 import com.lamadb.android.theme.ThemeMode
 import com.lamadb.android.ui.dashboard.DashboardScreen
-import com.lamadb.android.ui.health.HealthDataScreen
 import com.lamadb.android.ui.settings.SettingsScreen
-import com.lamadb.android.ui.tasks.ScheduledTasksScreen
 import com.lamadb.android.ui.wiki.WikiPageScreen
 import com.lamadb.android.ui.wiki.WikiScreen
 
@@ -72,9 +69,7 @@ fun AppScaffold(
         }
     ) { innerPadding ->
         Box(
-            modifier = Modifier
-                .padding(innerPadding)
-                .statusBarsPadding()
+            modifier = Modifier.padding(innerPadding)
         ) {
             when (selected) {
                 AppDestination.Dashboard -> DashboardScreen(
@@ -89,8 +84,6 @@ fun AppScaffold(
                     onPageClick = { page -> selectedWikiPage = page.path }
                 )
 
-                AppDestination.Tasks -> ScheduledTasksScreen()
-                AppDestination.Health -> HealthDataScreen()
                 AppDestination.Settings -> SettingsScreen(
                     serverUrl = serverUrl,
                     themeMode = themeMode,

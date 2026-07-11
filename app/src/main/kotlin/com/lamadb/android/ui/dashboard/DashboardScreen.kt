@@ -15,22 +15,21 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -44,8 +43,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -61,6 +60,7 @@ import com.lamadb.android.network.ConnectivityObserver
 import com.lamadb.android.network.ConnectionState
 import com.lamadb.android.presence.PresencePreferences
 import com.lamadb.android.theme.ThemeMode
+import com.lamadb.android.ui.main.ConnectionStatusBar
 
 private const val TAG = "LamaDB"
 private const val JS_BRIDGE_NAME = "LamaDBAndroid"
@@ -91,6 +91,10 @@ fun DashboardScreen(
     var webView: WebView? by remember { mutableStateOf(null) }
     var mainFrameError by remember { mutableStateOf<String?>(null) }
     var canGoBack by remember { mutableStateOf(false) }
+
+    val density = LocalDensity.current
+    val statusBarHeightDp = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val statusBarHeightPx = with(density) { statusBarHeightDp.roundToPx() }
 
     val connectivityObserver = remember { ConnectivityObserver(context) }
     LaunchedEffect(connectivityObserver) {
@@ -147,7 +151,7 @@ fun DashboardScreen(
                         loadState = DashboardLoadState.Error(error)
                     } else {
                         injectViewportFix(view)
-                        injectWebViewCss(view, showDebugOverlay)
+                        injectWebViewCss(view, showDebugOverlay, statusBarHeightPx)
                         canGoBack = view?.canGoBack() ?: false
 
 
@@ -216,6 +220,13 @@ fun DashboardScreen(
         }
     }
 
+    // Re-apply layout overrides if the status-bar height changes (rotation, split-screen).
+    LaunchedEffect(statusBarHeightPx) {
+        if (loadState is DashboardLoadState.Success) {
+            injectWebViewCss(webView, showDebugOverlay, statusBarHeightPx)
+        }
+    }
+
     // Pause/resume JavaScript when the dashboard screen goes to the background so the
     // WebView does not keep doing work while the user is on another tab.
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -268,11 +279,9 @@ fun DashboardScreen(
             )
         }
 
-        ConnectionStatusIndicator(
+        ConnectionStatusBar(
             state = connectionState,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
+            modifier = Modifier.align(Alignment.TopEnd)
         )
 
         if (loadState is DashboardLoadState.Error) {
@@ -290,46 +299,6 @@ private sealed class DashboardLoadState {
     data object Loading : DashboardLoadState()
     data object Success : DashboardLoadState()
     data class Error(val reason: String) : DashboardLoadState()
-}
-
-@Composable
-private fun ConnectionStatusIndicator(
-    state: ConnectionState,
-    modifier: Modifier = Modifier
-) {
-    val color = when (state) {
-        ConnectionState.Available -> MaterialTheme.colorScheme.primary
-        ConnectionState.Unavailable -> MaterialTheme.colorScheme.error
-    }
-    val label = when (state) {
-        ConnectionState.Available -> stringResource(R.string.dashboard_status_online)
-        ConnectionState.Unavailable -> stringResource(R.string.dashboard_status_offline)
-    }
-
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(color)
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(start = 6.dp)
-            )
-        }
-    }
 }
 
 @Composable
@@ -464,10 +433,18 @@ private fun injectViewportFix(view: WebView?) {
  * since the Android app provides a native NavigationBar. Also reclaims the
  * padding that the web layout reserves for the now-hidden mobile nav.
  *
+ * The dashboard is rendered edge-to-edge, so [statusBarHeightPx] is used to push
+ * the web header down so it is not hidden behind the system status bar / the
+ * native connection indicator.
+ *
  * When [showDebugOverlay] is false, the dashboard's debug overlay (red bar with
  * state metadata) is hidden.
  */
-private fun injectWebViewCss(view: WebView?, showDebugOverlay: Boolean) {
+private fun injectWebViewCss(
+    view: WebView?,
+    showDebugOverlay: Boolean,
+    statusBarHeightPx: Int = 0
+) {
     val hideDebugOverlayCss = if (showDebugOverlay) {
         ""
     } else {
@@ -478,15 +455,20 @@ private fun injectWebViewCss(view: WebView?, showDebugOverlay: Boolean) {
     view?.evaluateJavascript(
         """
         (function() {
+            var existing = document.getElementById('lamadb-android-css');
+            if (existing) existing.remove();
             var style = document.createElement('style');
+            style.id = 'lamadb-android-css';
             style.textContent = [
                 '.mobile-nav { display: none !important; }',
                 '.mobile-bottom-nav { display: none !important; }',
                 '.app-main { padding-bottom: var(--space-4) !important; }',
+                'body { padding-top: ${statusBarHeightPx}px !important; }',
+                '.app-header { top: ${statusBarHeightPx}px !important; }',
                 ${hideDebugOverlayCss.jsLiteral}
             ].join(' ');
             document.head.appendChild(style);
-            console.log('[webViewCss] hid web mobile nav, reset app-main padding, debugOverlay=$showDebugOverlay');
+            console.log('[webViewCss] hid web mobile nav, reset app-main padding, debugOverlay=$showDebugOverlay, statusBarHeight=${statusBarHeightPx}');
         })();
         """.trimIndent(),
         null
