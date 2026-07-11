@@ -437,6 +437,7 @@ private fun injectWebViewCss(
                 '.mobile-nav { display: none !important; }',
                 '.mobile-bottom-nav { display: none !important; }',
                 '.app-main { padding-bottom: var(--space-4) !important; }',
+                'button[aria-label="Command palette"] { display: none !important; }',
                 ${hideDebugOverlayCss.jsLiteral}
             ].join(' ');
             document.head.appendChild(style);
