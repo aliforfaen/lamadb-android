@@ -471,16 +471,8 @@ private fun injectWebViewCss(view: WebView?, showDebugOverlay: Boolean) {
     val hideDebugOverlayCss = if (showDebugOverlay) {
         ""
     } else {
-        // The debug overlay is a red bar showing class/notes/activity metadata.
-        // It is rendered as a child of .home-today-card or as a standalone
-        // element with inline red background. Hide both patterns.
-        """
-        .home-today-card > div[style*="background-color: rgb(185, 28, 28)"],
-        .home-today-card > div[style*="background: rgb(185, 28, 28)"],
-        .home-today-card > div[style*="#b91c1c"],
-        [style*="background-color: rgb(185, 28, 28)"],
-        [style*="background: rgb(185, 28, 28)"] { display: none !important; }
-        """.trimIndent()
+        // The dashboard renders a red debug state bar with id "home-diag".
+        "#home-diag { display: none !important; }"
     }
 
     view?.evaluateJavascript(
