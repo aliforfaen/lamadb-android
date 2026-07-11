@@ -48,6 +48,7 @@ import com.lamadb.android.BuildConfig
 import com.lamadb.android.R
 import com.lamadb.android.data.push.NtfyPushWorker
 import com.lamadb.android.data.wiki.WikiSyncWorker
+import com.lamadb.android.debug.DebugPreferences
 import com.lamadb.android.debug.TestDataSeeder
 import com.lamadb.android.logging.AppLogger
 import com.lamadb.android.logging.LogPreferences
@@ -75,6 +76,8 @@ fun SettingsScreen(
     onResetToFirstLaunch: () -> Unit = {},
     onDynamicColorChanged: (Boolean) -> Unit = {},
     onThemeModeChanged: (ThemeMode) -> Unit = {},
+    showDebugOverlay: Boolean = true,
+    onDebugOverlayChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -373,6 +376,8 @@ fun SettingsScreen(
         }
         if (BuildConfig.DEBUG) {
             DebugSettingsCard(
+                showDebugOverlay = showDebugOverlay,
+                onDebugOverlayChanged = onDebugOverlayChanged,
                 onSkipOnboarding = {
                     OnboardingPreferences(context).onboardingCompleted = true
                 },
@@ -399,6 +404,8 @@ fun SettingsScreen(
 
 @Composable
 private fun DebugSettingsCard(
+    showDebugOverlay: Boolean,
+    onDebugOverlayChanged: (Boolean) -> Unit,
     onSkipOnboarding: () -> Unit,
     onSeedData: () -> Unit,
     onResetToFirstLaunch: () -> Unit,
@@ -406,6 +413,7 @@ private fun DebugSettingsCard(
     onTriggerWorkers: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -421,6 +429,31 @@ private fun DebugSettingsCard(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.error
             )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.debug_dashboard_overlay_title),
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        text = stringResource(R.string.debug_dashboard_overlay_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = showDebugOverlay,
+                    onCheckedChange = {
+                        DebugPreferences(context).dashboardDebugOverlay = it
+                        onDebugOverlayChanged(it)
+                    }
+                )
+            }
 
             OutlinedButton(
                 onClick = onSkipOnboarding,

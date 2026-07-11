@@ -40,6 +40,8 @@ fun AppScaffold(
     onResetToFirstLaunch: () -> Unit = {},
     onDynamicColorChanged: (Boolean) -> Unit = {},
     onThemeModeChanged: (ThemeMode) -> Unit = {},
+    showDebugOverlay: Boolean = true,
+    onDebugOverlayChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selected by rememberSaveable { mutableStateOf(initialDestination ?: AppDestination.Dashboard) }
@@ -79,7 +81,8 @@ fun AppScaffold(
                     serverUrl = serverUrl,
                     apiKey = apiKey,
                     themeMode = themeMode,
-                    onOpenQrScanner = onOpenQrScanner
+                    onOpenQrScanner = onOpenQrScanner,
+                    showDebugOverlay = showDebugOverlay
                 )
 
                 AppDestination.Wiki -> WikiScreen(
@@ -97,7 +100,9 @@ fun AppScaffold(
                     onReplayOnboarding = onReplayOnboarding,
                     onResetToFirstLaunch = onResetToFirstLaunch,
                     onDynamicColorChanged = onDynamicColorChanged,
-                    onThemeModeChanged = onThemeModeChanged
+                    onThemeModeChanged = onThemeModeChanged,
+                    showDebugOverlay = showDebugOverlay,
+                    onDebugOverlayChanged = onDebugOverlayChanged
                 )
             }
         }

@@ -49,6 +49,7 @@ import com.lamadb.android.data.push.NtfyPushWorker
 import com.lamadb.android.data.wiki.WikiPageEntity
 import com.lamadb.android.data.wiki.WikiSyncWorker
 import com.lamadb.android.debug.DebugLaunchOptions
+import com.lamadb.android.debug.DebugPreferences
 import com.lamadb.android.debug.TestDataSeeder
 import com.lamadb.android.debug.parseDebugLaunchOptions
 import com.lamadb.android.logging.AppLogger
@@ -101,8 +102,10 @@ class MainActivity : FragmentActivity() {
         setContent {
             val context = this@MainActivity
             val themePreferences = remember { ThemePreferences(context) }
+            val debugPreferences = remember { DebugPreferences(context) }
             var dynamicColor by remember { mutableStateOf(themePreferences.useDynamicColor) }
             var themeMode by remember { mutableStateOf(themePreferences.themeMode) }
+            var showDebugOverlay by remember { mutableStateOf(debugPreferences.dashboardDebugOverlay) }
 
             LamaDBTheme(
                 dynamicColor = dynamicColor,
@@ -184,7 +187,9 @@ class MainActivity : FragmentActivity() {
                                     initialDestination = if (shortcutAction == "dashboard") AppDestination.Dashboard else launchOptions.startScreen,
                                     seedData = launchOptions.seedData,
                                     onDynamicColorChanged = { dynamicColor = it },
-                                    onThemeModeChanged = { themeMode = it }
+                                    onThemeModeChanged = { themeMode = it },
+                                    showDebugOverlay = showDebugOverlay,
+                                    onDebugOverlayChanged = { showDebugOverlay = it }
                                 )
                             }
                         } else {
@@ -346,7 +351,9 @@ private fun AuthenticatedContent(
     initialDestination: AppDestination?,
     seedData: Boolean,
     onDynamicColorChanged: (Boolean) -> Unit,
-    onThemeModeChanged: (ThemeMode) -> Unit
+    onThemeModeChanged: (ThemeMode) -> Unit,
+    showDebugOverlay: Boolean = true,
+    onDebugOverlayChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -426,7 +433,9 @@ private fun AuthenticatedContent(
             }
         },
         onDynamicColorChanged = onDynamicColorChanged,
-        onThemeModeChanged = onThemeModeChanged
+        onThemeModeChanged = onThemeModeChanged,
+        showDebugOverlay = showDebugOverlay,
+        onDebugOverlayChanged = onDebugOverlayChanged
     )
 }
 

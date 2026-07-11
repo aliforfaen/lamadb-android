@@ -55,6 +55,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.lamadb.android.BuildConfig
 import com.lamadb.android.R
+import com.lamadb.android.debug.DebugPreferences
 import com.lamadb.android.logging.AppLogger
 import com.lamadb.android.network.ConnectivityObserver
 import com.lamadb.android.network.ConnectionState
@@ -72,6 +73,7 @@ fun DashboardScreen(
     apiKey: String,
     themeMode: ThemeMode,
     onOpenQrScanner: () -> Unit,
+    showDebugOverlay: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -145,7 +147,7 @@ fun DashboardScreen(
                         loadState = DashboardLoadState.Error(error)
                     } else {
                         injectViewportFix(view)
-                        injectWebViewCss(view)
+                        injectWebViewCss(view, showDebugOverlay)
                         canGoBack = view?.canGoBack() ?: false
 
 
@@ -461,8 +463,26 @@ private fun injectViewportFix(view: WebView?) {
  * Injects CSS overrides to hide the web dashboard's own mobile bottom navigation,
  * since the Android app provides a native NavigationBar. Also reclaims the
  * padding that the web layout reserves for the now-hidden mobile nav.
+ *
+ * When [showDebugOverlay] is false, the dashboard's debug overlay (red bar with
+ * state metadata) is hidden.
  */
-private fun injectWebViewCss(view: WebView?) {
+private fun injectWebViewCss(view: WebView?, showDebugOverlay: Boolean) {
+    val hideDebugOverlayCss = if (showDebugOverlay) {
+        ""
+    } else {
+        // The debug overlay is a red bar showing class/notes/activity metadata.
+        // It is rendered as a child of .home-today-card or as a standalone
+        // element with inline red background. Hide both patterns.
+        """
+        .home-today-card > div[style*="background-color: rgb(185, 28, 28)"],
+        .home-today-card > div[style*="background: rgb(185, 28, 28)"],
+        .home-today-card > div[style*="#b91c1c"],
+        [style*="background-color: rgb(185, 28, 28)"],
+        [style*="background: rgb(185, 28, 28)"] { display: none !important; }
+        """.trimIndent()
+    }
+
     view?.evaluateJavascript(
         """
         (function() {
@@ -470,10 +490,11 @@ private fun injectWebViewCss(view: WebView?) {
             style.textContent = [
                 '.mobile-nav { display: none !important; }',
                 '.mobile-bottom-nav { display: none !important; }',
-                '.app-main { padding-bottom: var(--space-4) !important; }'
+                '.app-main { padding-bottom: var(--space-4) !important; }',
+                ${hideDebugOverlayCss.jsLiteral}
             ].join(' ');
             document.head.appendChild(style);
-            console.log('[webViewCss] hid web mobile nav, reset app-main padding');
+            console.log('[webViewCss] hid web mobile nav, reset app-main padding, debugOverlay=$showDebugOverlay');
         })();
         """.trimIndent(),
         null
