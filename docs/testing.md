@@ -28,6 +28,11 @@ All flags are intent extras passed to `MainActivity`.
 | `START_SCREEN` | string | Open a specific bottom-nav destination: `dashboard`, `wiki`, `tasks`, `health`, `settings`. |
 | `SEED_DATA` | boolean | Insert fake events, wiki pages, and a test notification after login. |
 | `RESET_FIRST_LAUNCH` | boolean | Clear all app data and restart from a blank first-launch state. |
+| `QUEUE_EVENT_COUNT` | int | Insert N fake pending events into the Room queue. |
+| `WIKI_PAGE_COUNT` | int | Insert N fake wiki pages into the Room cache. |
+| `PRESENCE_STATE` | string | Set presence state: `home`, `away`, or `unknown`. |
+| `AUTH_EXPIRED` | boolean | Save an intentionally invalid API key so the auth check treats the session as expired. |
+| `DUMP_LOGS` | boolean | Write the in-app log buffer to the app's external files dir and finish. Pull it with `adb shell run-as com.lamadb.android cat files/lamadb-logs.txt > /tmp/lamadb-logs.txt`. |
 
 ### Examples
 
@@ -134,3 +139,159 @@ When filing smoke-test results, include:
 ## Security note
 
 Every debug backdoor is wrapped in `BuildConfig.DEBUG`. Release builds ignore all intent extras, do not show the Debug tools card, and never call `TestDataSeeder`. No new permissions or exported components were added.
+
+
+---
+
+## Dogfood Scenario Catalog
+
+These scenarios are designed for automated agent testing via the `dogfood` skill. Each scenario lists the exact adb command, expected UI states, and verification checks.
+
+### Scenario 1: First-launch onboarding flow
+
+**Command:**
+```bash
+adb shell pm clear com.lamadb.android
+adb shell am start -n com.lamadb.android/.MainActivity
+```
+
+**Expected:**
+1. Splash icon appears briefly (purple hexagon)
+2. Auth checking spinner appears
+3. Onboarding screen shows with 3 swipeable pages
+4. "Skip" button in top-right corner is visible
+5. "Get Started" / "Next" button on last page
+
+**Verify:** Tap Skip → Login screen appears.
+
+### Scenario 2: Login with test account
+
+**Command:**
+```bash
+adb shell am start -n com.lamadb.android/.MainActivity \
+  --ez SKIP_ONBOARDING true \
+  --ez SKIP_PRESENCE_SETUP true \
+  --ez USE_TEST_ACCOUNT true
+```
+
+**Expected:**
+1. App opens directly to Dashboard
+2. Dashboard WebView loads and renders content
+3. Bottom nav shows: Dashboard, Wiki, Tasks, Health, Settings
+4. Pull-to-refresh indicator works on pull-down
+5. WebView back navigation works (navigate in-page, press back)
+
+**Verify:** All 5 nav tabs are tappable and load their respective screens.
+
+### Scenario 3: Settings — theme toggle and biometric
+
+**Command:**
+```bash
+adb shell am start -n com.lamadb.android/.MainActivity \
+  --ez SKIP_ONBOARDING true \
+  --ez SKIP_PRESENCE_SETUP true \
+  --ez USE_TEST_ACCOUNT true \
+  --es START_SCREEN settings
+```
+
+**Expected:**
+1. App opens directly to Settings screen
+2. Server URL card shows the LambdaDB URL
+3. Material You toggle visible (if device supports it)
+4. Dark mode segmented selector: System / Light / Dark
+5. Biometric lock toggle (off by default)
+6. Replay Onboarding, Reset Presence, Log out buttons
+
+**Verify:**
+- Toggle dark mode to Light → UI switches with crossfade
+- Tap Log out → confirmation dialog appears
+- Cancel → stays on Settings
+- Log out → confirm → Login screen appears
+
+### Scenario 4: Offline dashboard error overlay
+
+**Command:**
+```bash
+adb shell am start -n com.lamadb.android/.MainActivity \
+  --ez SKIP_ONBOARDING true \
+  --ez SKIP_PRESENCE_SETUP true \
+  --ez USE_TEST_ACCOUNT true
+# Then toggle airplane mode on the device
+```
+
+**Expected:**
+1. Dashboard loads then shows error overlay
+2. Title: "No internet connection"
+3. Body: "Your device appears to be offline..."
+4. Retry button is visible
+
+**Verify:** Toggle airplane mode off → dashboard auto-retries and loads.
+
+### Scenario 5: Wiki sync and pull-to-refresh
+
+**Command:**
+```bash
+adb shell am start -n com.lamadb.android/.MainActivity \
+  --ez SKIP_ONBOARDING true \
+  --ez SKIP_PRESENCE_SETUP true \
+  --ez USE_TEST_ACCOUNT true \
+  --ei WIKI_PAGE_COUNT 3 \
+  --es START_SCREEN wiki
+```
+
+**Expected:**
+1. Wiki screen shows 3 seeded pages
+2. Sync button (refresh icon) in top-right
+3. Pull-down triggers pull-to-refresh indicator
+4. Pull-to-refresh initiates a sync
+
+**Verify:** Tap a wiki page → WikiPageScreen shows content. Back button returns to list.
+
+### Scenario 6: Tasks queue with seeded events
+
+**Command:**
+```bash
+adb shell am start -n com.lamadb.android/.MainActivity \
+  --ez SKIP_ONBOARDING true \
+  --ez SKIP_PRESENCE_SETUP true \
+  --ez USE_TEST_ACCOUNT true \
+  --ei QUEUE_EVENT_COUNT 5 \
+  --es START_SCREEN tasks
+```
+
+**Expected:**
+1. Tasks screen shows "Queued events: 5"
+2. "Drain now" button visible
+3. Pull-to-refresh re-reads count from Room
+
+**Verify:** Tap "Drain now" → count decreases, drain result shown.
+
+### Scenario 7: Logout and re-login cycle
+
+**Command:**
+```bash
+adb shell am start -n com.lamadb.android/.MainActivity \
+  --ez SKIP_ONBOARDING true \
+  --ez SKIP_PRESENCE_SETUP true \
+  --ez USE_TEST_ACCOUNT true \
+  --es START_SCREEN settings
+```
+
+**Expected:**
+1. Settings → Log out → confirmation dialog
+2. Confirm → Login screen appears
+3. Login with manual credentials → Dashboard
+
+**Verify:** Full round-trip works: Dashboard → Settings → Logout → Login → Dashboard.
+
+### Scenario 8: Launcher shortcuts
+
+**Prerequisite:** App must be installed (not just a first-run).
+
+**Steps:**
+1. Long-press the app icon on the launcher
+2. Two shortcuts appear: "Dashboard" and "Scan QR"
+
+**Verify:**
+- Tap "Dashboard" → opens app to Dashboard
+- Tap "Scan QR" → opens app to QR scanner (if authenticated) or biometric prompt

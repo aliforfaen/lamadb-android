@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -32,11 +33,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.lamadb.android.R
 import kotlinx.coroutines.launch
+import androidx.compose.ui.tooling.preview.Preview
+import com.lamadb.android.theme.LamaDBTheme
 
 private data class OnboardingPage(
     val icon: ImageVector,
@@ -77,6 +81,7 @@ fun OnboardingScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -84,7 +89,10 @@ fun OnboardingScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
-            TextButton(onClick = onSkip) {
+            TextButton(
+                onClick = onSkip,
+                modifier = Modifier.testTag("onboarding_skip_button")
+            ) {
                 Text(stringResource(R.string.onboarding_skip))
             }
         }
@@ -121,7 +129,7 @@ fun OnboardingScreen(
         if (isLastPage) {
             Button(
                 onClick = onGetStarted,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().testTag("onboarding_get_started_button")
             ) {
                 Text(stringResource(R.string.onboarding_get_started))
             }
@@ -132,7 +140,7 @@ fun OnboardingScreen(
                         pagerState.animateScrollToPage(pagerState.currentPage + 1)
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().testTag("onboarding_next_button")
             ) {
                 Text(stringResource(R.string.onboarding_next))
             }
@@ -176,6 +184,18 @@ private fun OnboardingPageContent(page: OnboardingPage) {
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+
+@Preview(showBackground = true)
+@Composable
+private fun OnboardingScreenPreview() {
+    LamaDBTheme {
+        OnboardingScreen(
+            onGetStarted = {},
+            onSkip = {}
         )
     }
 }

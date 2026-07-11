@@ -36,6 +36,12 @@
     <string name="dashboard_status_offline">Offline</string>
     <string name="dashboard_error_title">Couldn’t load dashboard</string>
     <string name="dashboard_error_retry">Retry</string>
+    <string name="dashboard_error_offline_title">No internet connection</string>
+    <string name="dashboard_error_offline_body">Your device appears to be offline. The dashboard will reload when connectivity returns.</string>
+    <string name="dashboard_error_unreachable_title">Cannot reach LamaDB</string>
+    <string name="dashboard_error_unreachable_body">The server is not responding. Check that LamaDB is running on your Tailnet.</string>
+    <string name="dashboard_error_server_title">Server error</string>
+    <string name="dashboard_error_server_body">LamaDB returned a server error. Please try again later.</string>
 
     <!-- Battery optimization -->
     <string name="battery_optimization_title">Keep presence running</string>
@@ -159,4 +165,15 @@
     <string name="health_last_sync">Last sync: %1$s</string>
     <string name="health_never_synced">Not synced yet</string>
     <string name="health_coming_soon">Samsung Health and Health Connect integration is planned for a future update.</string>
+
+    <!-- Logout confirmation -->
+    <string name="settings_logout_confirm_title">Log out?</string>
+    <string name="settings_logout_confirm_body">You will need your API key to sign in again.</string>
+    <string name="settings_logout_confirm_positive">Log out</string>
+    <string name="settings_logout_confirm_negative">Cancel</string>
+    <!-- Launcher shortcuts -->
+    <string name="shortcut_dashboard">Dashboard</string>
+    <string name="shortcut_dashboard_long">Open LamaDB Dashboard</string>
+    <string name="shortcut_scan_qr">Scan QR</string>
+    <string name="shortcut_scan_qr_long">Scan LamaDB QR code</string>
 </resources>

@@ -17,7 +17,11 @@ data class DebugLaunchOptions(
     val startScreen: AppDestination? = null,
     val useTestAccount: Boolean = false,
     val seedData: Boolean = false,
-    val resetFirstLaunch: Boolean = false
+    val resetFirstLaunch: Boolean = false,
+    val queueEventCount: Int = 0,
+    val wikiPageCount: Int = 0,
+    val presenceState: String? = null,
+    val authExpired: Boolean = false
 )
 
 /**
@@ -33,7 +37,11 @@ fun Intent.parseDebugLaunchOptions(): DebugLaunchOptions {
         startScreen = getStringExtra(EXTRA_START_SCREEN)?.toAppDestination(),
         useTestAccount = getBooleanExtra(EXTRA_USE_TEST_ACCOUNT, false),
         seedData = getBooleanExtra(EXTRA_SEED_DATA, false),
-        resetFirstLaunch = getBooleanExtra(EXTRA_RESET_FIRST_LAUNCH, false)
+        resetFirstLaunch = getBooleanExtra(EXTRA_RESET_FIRST_LAUNCH, false),
+        queueEventCount = getIntExtra(EXTRA_QUEUE_EVENT_COUNT, 0),
+        wikiPageCount = getIntExtra(EXTRA_WIKI_PAGE_COUNT, 0),
+        presenceState = getStringExtra(EXTRA_PRESENCE_STATE),
+        authExpired = getBooleanExtra(EXTRA_AUTH_EXPIRED, false)
     )
 }
 
@@ -53,3 +61,7 @@ const val EXTRA_START_SCREEN = "START_SCREEN"
 const val EXTRA_USE_TEST_ACCOUNT = "USE_TEST_ACCOUNT"
 const val EXTRA_SEED_DATA = "SEED_DATA"
 const val EXTRA_RESET_FIRST_LAUNCH = "RESET_FIRST_LAUNCH"
+const val EXTRA_QUEUE_EVENT_COUNT = "QUEUE_EVENT_COUNT"
+const val EXTRA_WIKI_PAGE_COUNT = "WIKI_PAGE_COUNT"
+const val EXTRA_PRESENCE_STATE = "PRESENCE_STATE"
+const val EXTRA_AUTH_EXPIRED = "AUTH_EXPIRED"

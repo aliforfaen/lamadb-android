@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -26,7 +27,10 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.work.OneTimeWorkRequestBuilder
@@ -50,10 +55,13 @@ import com.lamadb.android.onboarding.OnboardingPreferences
 import com.lamadb.android.power.BatteryOptimizationHelper
 import com.lamadb.android.power.BatteryOptimizationPreferences
 import com.lamadb.android.theme.ThemeMode
+import com.lamadb.android.theme.SecurityPreferences
 import com.lamadb.android.theme.ThemePreferences
 import com.lamadb.android.ui.power.BatteryOptimizationCard
 import com.lamadb.android.widget.EventWidgetRefreshWorker
 import kotlinx.coroutines.launch
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.biometric.BiometricManager
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -80,6 +88,7 @@ fun SettingsScreen(
     }
     var selectedThemeMode by remember { mutableStateOf(themeMode) }
     var loggingEnabled by remember { mutableStateOf(logPreferences.loggingEnabled) }
+    var showLogoutConfirm by remember { mutableStateOf(false) }
     var showBatteryCard by remember {
         mutableStateOf(
             !batteryHelper.isIgnoringBatteryOptimizations() &&
@@ -90,6 +99,7 @@ fun SettingsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -157,12 +167,68 @@ fun SettingsScreen(
                     )
                 }
                 Switch(
+                    modifier = Modifier.testTag("settings_material_you_toggle"),
                     checked = useDynamicColor,
                     enabled = themePreferences.supportsDynamicColor,
                     onCheckedChange = {
                         useDynamicColor = it
                         themePreferences.useDynamicColor = it
                         onDynamicColorChanged(it)
+                    }
+                )
+            }
+        }
+
+        val securityPrefs = remember { SecurityPreferences(context) }
+        val biometricManager = remember { BiometricManager.from(context) }
+        val canAuthenticate = remember {
+            biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+        }
+        val biometricAvailable = canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS
+        var biometricEnabled by remember { mutableStateOf(securityPrefs.biometricEnabled) }
+
+        LaunchedEffect(biometricAvailable) {
+            if (!biometricAvailable && biometricEnabled) {
+                biometricEnabled = false
+                securityPrefs.biometricEnabled = false
+            }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Biometric lock",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = if (biometricAvailable) {
+                            "Require fingerprint or face to open the app"
+                        } else {
+                            "Not available on this device"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    modifier = Modifier.testTag("settings_biometric_toggle"),
+                    checked = biometricEnabled,
+                    enabled = biometricAvailable,
+                    onCheckedChange = {
+                        biometricEnabled = it
+                        securityPrefs.biometricEnabled = it
                     }
                 )
             }
@@ -183,6 +249,7 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
                 ThemeModeSelector(
+                    modifier = Modifier.testTag("settings_dark_mode_selector"),
                     selected = selectedThemeMode,
                     onSelected = {
                         selectedThemeMode = it
@@ -240,7 +307,7 @@ fun SettingsScreen(
                 ) {
                     OutlinedButton(
                         onClick = onViewLogs,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().testTag("settings_view_logs_button")
                     ) {
                         Text(stringResource(R.string.settings_view_logs))
                     }
@@ -260,27 +327,50 @@ fun SettingsScreen(
             ) {
                 OutlinedButton(
                     onClick = onReplayOnboarding,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().testTag("settings_replay_onboarding_button")
                 ) {
                     Text(stringResource(R.string.settings_replay_onboarding))
                 }
 
                 OutlinedButton(
                     onClick = onResetPresence,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().testTag("settings_reset_presence_button")
                 ) {
                     Text(stringResource(R.string.settings_reset_presence))
                 }
 
                 Button(
-                    onClick = onLogout,
-                    modifier = Modifier.fillMaxWidth()
+                    onClick = { showLogoutConfirm = true },
+                    modifier = Modifier.fillMaxWidth().testTag("settings_logout_button")
                 ) {
                     Text(stringResource(R.string.settings_logout))
                 }
             }
         }
 
+
+        if (showLogoutConfirm) {
+            AlertDialog(
+                onDismissRequest = { showLogoutConfirm = false },
+                title = { Text(stringResource(R.string.settings_logout_confirm_title)) },
+                text = { Text(stringResource(R.string.settings_logout_confirm_body)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showLogoutConfirm = false
+                            onLogout()
+                        }
+                    ) {
+                        Text(stringResource(R.string.settings_logout_confirm_positive))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showLogoutConfirm = false }) {
+                        Text(stringResource(R.string.settings_logout_confirm_negative))
+                    }
+                }
+            )
+        }
         if (BuildConfig.DEBUG) {
             DebugSettingsCard(
                 onSkipOnboarding = {
@@ -432,3 +522,17 @@ private data class ThemeModeOption(
     val labelRes: Int,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 )
+
+
+@Preview(showBackground = true)
+@Composable
+private fun SettingsScreenPreview() {
+    com.lamadb.android.theme.LamaDBTheme {
+        SettingsScreen(
+            serverUrl = "https://lamadb.tailnet",
+            themeMode = com.lamadb.android.theme.ThemeMode.SYSTEM,
+            onLogout = {},
+            onResetPresence = {}
+        )
+    }
+}

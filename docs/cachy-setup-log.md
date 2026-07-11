@@ -512,3 +512,59 @@ Files changed:
 
 - `./gradlew test` — all tests pass
 - `./gradlew lint` — passes
+
+---
+
+## 2026-07-11 — LAMA-97 UX polish (Tiers 1-4 complete)
+
+Full UX polish and quality-of-life improvements across 4 tiers (25 checklist items).
+
+### Tier 1 — First Impression (5 items)
+- Splash screen API (`core-splashscreen:1.0.1`, `Theme.LamaDB.Splash`, `installSplashScreen()`)
+- Auth checking loading screen (`AuthCheckingScreen` with `CircularProgressIndicator`)
+- Logout confirmation `AlertDialog` (Settings → confirm → logout)
+- WebView back-button navigation (`BackHandler(enabled = canGoBack)` in DashboardScreen)
+- Edge-to-edge insets (`systemBarsPadding()` / `statusBarsPadding()`)
+
+### Tier 2 — Quality of Life (6 items)
+- WebView `LinearProgressIndicator` during page loads
+- Biometric lock (`androidx.biometric:1.1.0`, `SecurityPreferences`, Settings toggle, `FragmentActivity` base)
+- Launcher shortcuts (`res/xml/shortcuts.xml` — Dashboard + Scan QR)
+- Pull-to-refresh Wiki + Tasks (`ExperimentalMaterialApi` pattern)
+- Theme switch `Crossfade` transition
+- Network error differentiation (offline vs server error in ErrorOverlay)
+
+### Tier 3 — Release Readiness (6 items)
+- Predictive back gesture (`android:enableOnBackInvokedCallback="true"`)
+- Themed/monochrome adaptive icon (monochrome layer in `ic_launcher.xml`)
+- `contentDescription` on `NavigationBarItem` (was null, now stringResource)
+- `@Preview` composables (OnboardingScreen, SettingsScreen, LoginScreen)
+- R8 minification enabled (`isMinifyEnabled = true` + ProGuard rules for Ktor, Room, WebView, SLF4J)
+- `FLAG_SECURE` verified (`PasswordVisualTransformation` on API key field)
+
+### Tier 4 — Dogfood Enablers (7 items)
+- `Modifier.testTag()` on 35+ elements across 9 files
+- State-injection intent extras (`QUEUE_EVENT_COUNT`, `WIKI_PAGE_COUNT`, `PRESENCE_STATE`, `AUTH_EXPIRED`)
+- UIAutomator targeting via `Modifier.testTag()` (the manifest-level `accessibilityFlags` attribute was removed — it is not a valid `<application>` attribute)
+- Dogfood scenario catalog (8 scenarios in `docs/testing.md`)
+- Emulator scripts (`scripts/start-emulator.sh`, `scripts/stop-emulator.sh`)
+- ADB log dump (`DUMP_LOGS` intent writes `AppLogger` buffer to `getExternalFilesDir(null)/lamadb-logs.txt`; pull via `adb shell run-as com.lamadb.android cat files/lamadb-logs.txt`)
+- IconButton accessibility audit (all had contentDescription)
+
+### Files changed
+18 application files modified, 5 new files created:
+- `app/src/main/res/drawable/ic_splash.xml`
+- `app/src/main/res/xml/shortcuts.xml`
+- `app/src/main/kotlin/com/lamadb/android/theme/SecurityPreferences.kt`
+- `scripts/start-emulator.sh`, `scripts/stop-emulator.sh`
+
+### Build verification
+- Debug: `./gradlew assembleDebug` ✓
+- Release (R8): `./gradlew assembleRelease` ✓
+- Tests: 58/58 pass (including new `DebugLaunchOptionsTest`)
+
+### Key architectural decisions
+- `MainActivity` base class: `ComponentActivity` → `FragmentActivity` (required for `BiometricPrompt`)
+- Theme parent: `Theme.AppCompat.DayNight.NoActionBar` (not `Theme.Material3.DayNight.NoActionBar` — platform doesn't have it)
+- ProGuard: Ktor serialization keep rules, SLF4J `-dontwarn`, WebView `@JavascriptInterface` keep
+- Biometric lock + launcher shortcuts correctly merged in `AuthState.Authenticated` block (shortcuts gated behind biometric)

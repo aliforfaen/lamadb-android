@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -30,6 +31,13 @@ import androidx.compose.ui.unit.dp
 import com.lamadb.android.BuildConfig
 import com.lamadb.android.R
 import com.lamadb.android.ui.auth.AuthViewModel
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.tooling.preview.Preview
+import com.lamadb.android.data.auth.AuthRepository
+import com.lamadb.android.data.auth.SecureTokenStore
+import com.lamadb.android.theme.LamaDBTheme
 
 @Composable
 fun LoginScreen(
@@ -46,6 +54,7 @@ fun LoginScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .systemBarsPadding()
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -65,7 +74,7 @@ fun LoginScreen(
                 keyboardType = KeyboardType.Uri,
                 imeAction = ImeAction.Next
             ),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().testTag("login_server_url")
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -79,7 +88,7 @@ fun LoginScreen(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done
             ),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().testTag("login_api_key")
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -99,7 +108,7 @@ fun LoginScreen(
         Button(
             onClick = { viewModel.login(apiKey, serverUrl) },
             enabled = serverUrl.isNotBlank() && apiKey.isNotBlank() && !isLoading,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().testTag("login_button")
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
@@ -116,8 +125,7 @@ fun LoginScreen(
 
         OutlinedButton(
             onClick = onScanQr,
-            enabled = !isLoading,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().testTag("login_scan_qr_button")
         ) {
             Text("Scan QR code")
         }
@@ -141,5 +149,21 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(16.dp))
             CircularProgressIndicator()
         }
+    }
+}
+
+
+@Preview(showBackground = true)
+@Composable
+private fun LoginScreenPreview() {
+    val context = LocalContext.current
+    val viewModel = remember {
+        AuthViewModel(AuthRepository(SecureTokenStore(context)))
+    }
+    LamaDBTheme {
+        LoginScreen(
+            viewModel = viewModel,
+            onScanQr = {}
+        )
     }
 }

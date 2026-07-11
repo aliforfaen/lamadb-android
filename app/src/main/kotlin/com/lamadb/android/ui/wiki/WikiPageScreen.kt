@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lamadb.android.R
@@ -88,7 +89,10 @@ fun WikiPageScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.testTag("wiki_page_back_button")
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.wiki_page_back)
@@ -98,7 +102,8 @@ fun WikiPageScreen(
                 actions = {
                     IconButton(
                         onClick = { load() },
-                        enabled = !isLoading
+                        enabled = !isLoading,
+                        modifier = Modifier.testTag("wiki_page_reload_button")
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(modifier = Modifier.padding(4.dp))

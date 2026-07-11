@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lamadb.android.R
@@ -77,6 +78,7 @@ fun HealthDataScreen(modifier: Modifier = Modifier) {
                     )
                 }
                 Switch(
+                    modifier = Modifier.testTag("health_sync_toggle"),
                     checked = syncEnabled,
                     onCheckedChange = {
                         syncEnabled = it

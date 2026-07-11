@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -98,7 +99,7 @@ fun PresenceSetupDialog(
                         onValueChange = { homeSsid = it },
                         label = { Text(stringResource(R.string.presence_setup_ssid_label)) },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().testTag("presence_ssid_field")
                     )
                 }
             },
@@ -122,13 +123,17 @@ fun PresenceSetupDialog(
                             }
                         }
                     },
-                    enabled = homeSsid.isNotBlank()
+                    enabled = homeSsid.isNotBlank(),
+                    modifier = Modifier.testTag("presence_confirm_button")
                 ) {
                     Text(stringResource(R.string.presence_setup_confirm))
                 }
             },
             dismissButton = {
-                TextButton(onClick = onDismiss) {
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.testTag("presence_skip_button")
+                ) {
                     Text(stringResource(R.string.presence_setup_skip))
                 }
             }

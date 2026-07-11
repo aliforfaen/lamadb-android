@@ -2,6 +2,7 @@ package com.lamadb.android.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.animation.Crossfade
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -44,9 +45,11 @@ fun LamaDBTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    Crossfade(targetState = colorScheme, label = "theme-crossfade") { scheme ->
+        MaterialTheme(
+            colorScheme = scheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }

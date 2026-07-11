@@ -7,6 +7,7 @@ import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -24,12 +25,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -84,6 +88,7 @@ fun DashboardScreen(
     var connectionState by remember { mutableStateOf<ConnectionState>(ConnectionState.Available) }
     var webView: WebView? by remember { mutableStateOf(null) }
     var mainFrameError by remember { mutableStateOf<String?>(null) }
+    var canGoBack by remember { mutableStateOf(false) }
 
     val connectivityObserver = remember { ConnectivityObserver(context) }
     LaunchedEffect(connectivityObserver) {
@@ -141,6 +146,7 @@ fun DashboardScreen(
                     } else {
                         injectViewportFix(view)
                         injectWebViewCss(view)
+                        canGoBack = view?.canGoBack() ?: false
 
 
                         loadState = DashboardLoadState.Success
@@ -164,6 +170,20 @@ fun DashboardScreen(
                     }
                 }
 
+                override fun onReceivedHttpError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    errorResponse: WebResourceResponse?
+                ) {
+                    if (request?.isForMainFrame == true) {
+                        val status = errorResponse?.statusCode ?: 0
+                        if (status >= 500) {
+                            AppLogger.e(TAG, "Dashboard HTTP error: $status")
+                            mainFrameError = "HTTP $status"
+                        }
+                    }
+                }
+
                 @SuppressLint("WebViewClientOnReceivedSslError")
                 override fun onReceivedSslError(
                     view: WebView?,
@@ -182,6 +202,10 @@ fun DashboardScreen(
     }
 
     webView = webViewRef
+
+    BackHandler(enabled = canGoBack) {
+        webView?.goBack()
+    }
 
     // Re-inject theme when the dark-mode preference changes while the page is loaded.
     LaunchedEffect(isDarkMode) {
@@ -220,7 +244,7 @@ fun DashboardScreen(
     ) {
         AndroidView(
             factory = { webViewRef },
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().testTag("dashboard_webview"),
             onRelease = {
                 // The WebView is retained across recompositions by remember; we only
                 // destroy it when the screen is truly removed.
@@ -234,6 +258,14 @@ fun DashboardScreen(
             contentColor = MaterialTheme.colorScheme.primary
         )
 
+        if (isRefreshing) {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter)
+            )
+        }
+
         ConnectionStatusIndicator(
             state = connectionState,
             modifier = Modifier
@@ -244,6 +276,7 @@ fun DashboardScreen(
         if (loadState is DashboardLoadState.Error) {
             ErrorOverlay(
                 reason = (loadState as DashboardLoadState.Error).reason,
+                isOffline = connectionState is ConnectionState.Unavailable,
                 onRetry = { webView?.reload() },
                 modifier = Modifier.fillMaxSize()
             )
@@ -300,9 +333,26 @@ private fun ConnectionStatusIndicator(
 @Composable
 private fun ErrorOverlay(
     reason: String,
+    isOffline: Boolean,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isServerError = !isOffline && reason.startsWith("HTTP 5")
+    val isUnreachable = !isOffline && !isServerError && reason.contains("ERR_")
+
+    val titleRes = when {
+        isOffline -> R.string.dashboard_error_offline_title
+        isServerError -> R.string.dashboard_error_server_title
+        isUnreachable -> R.string.dashboard_error_unreachable_title
+        else -> R.string.dashboard_error_title
+    }
+    val bodyRes = when {
+        isOffline -> R.string.dashboard_error_offline_body
+        isServerError -> R.string.dashboard_error_server_body
+        isUnreachable -> R.string.dashboard_error_unreachable_body
+        else -> null
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -320,13 +370,13 @@ private fun ErrorOverlay(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = stringResource(R.string.dashboard_error_title),
+                text = stringResource(titleRes),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = reason,
+                text = bodyRes?.let { stringResource(it) } ?: reason,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

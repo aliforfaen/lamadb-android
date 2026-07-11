@@ -1,6 +1,7 @@
 package com.lamadb.android.ui.wiki
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lamadb.android.R
@@ -39,6 +45,7 @@ import com.lamadb.android.data.wiki.WikiRepository
 import com.lamadb.android.data.wiki.WikiSyncWorker
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun WikiScreen(
     onPageClick: (WikiPageEntity) -> Unit,
@@ -83,58 +90,77 @@ fun WikiScreen(
         WikiSyncWorker.schedule(context)
     }
 
-    Column(
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isLoading,
+        onRefresh = { sync() }
+    )
+
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .pullRefresh(pullRefreshState)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.wiki_title),
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                Text(
-                    text = stringResource(R.string.wiki_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            IconButton(
-                onClick = { sync() },
-                enabled = !isLoading
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.padding(4.dp))
-                } else {
-                    Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.wiki_sync))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.wiki_title),
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                    Text(
+                        text = stringResource(R.string.wiki_subtitle),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(
+                    onClick = { sync() },
+                    enabled = !isLoading,
+                    modifier = Modifier.testTag("wiki_sync_button")
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.padding(4.dp))
+                    } else {
+                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.wiki_sync))
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        status?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
             Spacer(modifier = Modifier.height(8.dp))
+
+            status?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            if (pages.isEmpty() && !isLoading) {
+                EmptyWikiState()
+            } else {
+                WikiPageList(
+                    pages = pages,
+                    onPageClick = onPageClick
+                )
+            }
         }
 
-        if (pages.isEmpty() && !isLoading) {
-            EmptyWikiState()
-        } else {
-            WikiPageList(
-                pages = pages,
-                onPageClick = onPageClick
-            )
-        }
+        PullRefreshIndicator(
+            refreshing = isLoading,
+            state = pullRefreshState,
+            modifier = Modifier.align(Alignment.TopCenter),
+            contentColor = MaterialTheme.colorScheme.primary
+        )
     }
 }
 
@@ -169,7 +195,7 @@ private fun WikiPageList(
     val grouped = pages.groupBy { it.section.ifBlank { stringResource(R.string.wiki_section_other) } }
 
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().testTag("wiki_page_list"),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         grouped.entries.sortedBy { it.key }.forEach { (section, sectionPages) ->
@@ -199,6 +225,7 @@ private fun WikiPageRow(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .testTag("wiki_page_row_${page.path}")
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
